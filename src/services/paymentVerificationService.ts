@@ -7,6 +7,7 @@ import {
   StoreType,
 } from '../types/paymentVerification';
 import { OrderManagementService } from './orderManagementService';
+import { fetchProductionPayments, reviewPayment } from './productionService';
 
 // Initial Mock Dataset for Payment Verification Queue
 const MOCK_PAYMENTS: PaymentVerificationRecord[] = [
@@ -408,9 +409,13 @@ export class PaymentVerificationService {
     totalCount: number;
     totalPages: number;
   }> {
-    await new Promise((res) => setTimeout(res, 80));
-
-    const filtered = PaymentVerificationService.filterPaymentsUnpaginated(filters);
+    let filtered = await fetchProductionPayments() as PaymentVerificationRecord[];
+    if (filters.searchQuery?.trim()) {
+      const q = filters.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((payment) => [payment.paymentReference, payment.orderNumber, payment.customerName, payment.customerEmail, payment.transactionReference].some((value) => value.toLowerCase().includes(q)));
+    }
+    if (filters.storeFilter && filters.storeFilter !== 'all') filtered = filtered.filter((payment) => payment.storeType.toLowerCase() === filters.storeFilter!.toLowerCase());
+    if (filters.statusFilter && filters.statusFilter !== 'all') filtered = filtered.filter((payment) => payment.verificationStatus === filters.statusFilter);
 
     // Pagination
     const page = filters.page || 1;
@@ -540,8 +545,7 @@ export class PaymentVerificationService {
    * Retrieve single payment record by ID
    */
   static async getPaymentById(id: string): Promise<PaymentVerificationRecord | null> {
-    await new Promise((res) => setTimeout(res, 50));
-    const found = paymentsStore.find((p) => p.id === id);
+    const found = (await fetchProductionPayments()).find((p) => p.id === id);
     return found ? { ...found } : null;
   }
 
@@ -549,20 +553,19 @@ export class PaymentVerificationService {
    * Get aggregate statistics for the Payment Verification Dashboard Header
    */
   static async getStats(): Promise<PaymentStats> {
-    await new Promise((res) => setTimeout(res, 50));
+    const payments = await fetchProductionPayments();
+    const totalPayments = payments.length;
+    const pendingCount = payments.filter((p) => p.verificationStatus === 'PENDING_REVIEW').length;
+    const underReviewCount = payments.filter((p) => p.verificationStatus === 'UNDER_REVIEW').length;
+    const verifiedCount = payments.filter((p) => p.verificationStatus === 'VERIFIED').length;
+    const rejectedCount = payments.filter((p) => p.verificationStatus === 'REJECTED').length;
+    const moreInfoCount = payments.filter((p) => p.verificationStatus === 'REQUIRES_MORE_INFO').length;
 
-    const totalPayments = paymentsStore.length;
-    const pendingCount = paymentsStore.filter((p) => p.verificationStatus === 'PENDING_REVIEW').length;
-    const underReviewCount = paymentsStore.filter((p) => p.verificationStatus === 'UNDER_REVIEW').length;
-    const verifiedCount = paymentsStore.filter((p) => p.verificationStatus === 'VERIFIED').length;
-    const rejectedCount = paymentsStore.filter((p) => p.verificationStatus === 'REJECTED').length;
-    const moreInfoCount = paymentsStore.filter((p) => p.verificationStatus === 'REQUIRES_MORE_INFO').length;
-
-    const totalVolumeUSD = paymentsStore.reduce((sum, p) => sum + p.amountPaid, 0);
-    const pendingVolumeUSD = paymentsStore
+    const totalVolumeUSD = payments.reduce((sum, p) => sum + p.amountPaid, 0);
+    const pendingVolumeUSD = payments
       .filter((p) => p.verificationStatus === 'PENDING_REVIEW' || p.verificationStatus === 'UNDER_REVIEW')
       .reduce((sum, p) => sum + p.amountPaid, 0);
-    const verifiedVolumeUSD = paymentsStore
+    const verifiedVolumeUSD = payments
       .filter((p) => p.verificationStatus === 'VERIFIED')
       .reduce((sum, p) => sum + p.amountPaid, 0);
 
@@ -587,35 +590,8 @@ export class PaymentVerificationService {
     verifierName: string = 'Admin User',
     notes?: string
   ): Promise<PaymentVerificationRecord | null> {
-    const payment = paymentsStore.find((p) => p.id === id);
-    if (!payment) return null;
-
-    const nowIso = new Date().toISOString();
-    payment.verificationStatus = 'VERIFIED';
-    payment.assignedVerifier = verifierName;
-    payment.lastUpdated = nowIso;
-    payment.associatedOrderStatus = 'CONFIRMED'; // Connection hook to Order Status Architecture
-
-    payment.verificationHistory.unshift({
-      id: `hist_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      timestamp: nowIso,
-      status: 'VERIFIED',
-      verifier: verifierName,
-      action: 'STATUS_CHANGED',
-      notes: notes || 'Payment verified. Funds confirmed in treasury.',
-    });
-
-    if (notes) {
-      payment.adminNotes.unshift({
-        id: `note_${Date.now()}`,
-        author: verifierName,
-        text: notes,
-        timestamp: nowIso,
-      });
-    }
-
-    notifySubscribers();
-    return { ...payment };
+    await reviewPayment(id, true, notes);
+    return PaymentVerificationService.getPaymentById(id);
   }
 
   /**
@@ -626,34 +602,8 @@ export class PaymentVerificationService {
     reason: string,
     verifierName: string = 'Admin User'
   ): Promise<PaymentVerificationRecord | null> {
-    const payment = paymentsStore.find((p) => p.id === id);
-    if (!payment) return null;
-
-    const nowIso = new Date().toISOString();
-    payment.verificationStatus = 'REJECTED';
-    payment.rejectionReason = reason;
-    payment.assignedVerifier = verifierName;
-    payment.lastUpdated = nowIso;
-    payment.associatedOrderStatus = 'CANCELLED';
-
-    payment.verificationHistory.unshift({
-      id: `hist_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      timestamp: nowIso,
-      status: 'REJECTED',
-      verifier: verifierName,
-      action: 'STATUS_CHANGED',
-      notes: `Rejected: ${reason}`,
-    });
-
-    payment.adminNotes.unshift({
-      id: `note_${Date.now()}`,
-      author: verifierName,
-      text: `Payment rejected. Reason: ${reason}`,
-      timestamp: nowIso,
-    });
-
-    notifySubscribers();
-    return { ...payment };
+    await reviewPayment(id, false, reason);
+    return PaymentVerificationService.getPaymentById(id);
   }
 
   /**

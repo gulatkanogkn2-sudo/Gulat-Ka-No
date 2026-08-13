@@ -13,10 +13,12 @@ import {
   OrderSubmissionResult,
 } from '../../types/checkout';
 import {
-  getCheckoutPaymentMethods,
-  SAVED_ADDRESSES_MOCK,
   CheckoutService,
 } from '../../services/checkoutService';
+import { loadProductionCheckoutConfig } from '../../services/productionService';
+import { CheckoutAccessory } from '../../types/checkout';
+import { accessoryService } from '../../services/accessoryService';
+import { convertPhpToUsd, convertUsdToPhp } from '../../utils/currencyUtils';
 import { CheckoutForm } from '../../components/checkout/CheckoutForm';
 import { CheckoutSidebar } from '../../components/checkout/CheckoutSidebar';
 import { SuccessModal } from '../../components/checkout/SuccessModal';
@@ -34,35 +36,22 @@ export const CheckoutPage: React.FC = () => {
 
   // Customer Info State (Auto-fill from user account when available)
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    fullName: user?.fullName || 'Dr. Alexander Vance',
-    email: user?.email || 'alexander.vance@gknlabs.org',
-    phone: '+63 917 123 4567',
-    companyOrInstitution: 'Apex BioTech Research',
+    fullName: user?.fullName || '',
+    email: user?.email || '',
+    phone: '',
+    companyOrInstitution: '',
   });
 
   // Shipping Address State
-  const [selectedAddress, setSelectedAddress] = useState<ShippingAddress>(
-    SAVED_ADDRESSES_MOCK[0]
-  );
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<ShippingAddress>({ recipientName: '', phone: '', addressLine1: '', city: '', province: '', postalCode: '', country: 'Philippines' });
 
   // Payment Method State
-  const availableMethods = getCheckoutPaymentMethods();
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodOption>(
-    availableMethods[0] || ({
-      id: 'custom',
-      name: 'Custom Payment',
-      subtitle: '',
-      badge: 'PAYMENT',
-      accountName: '',
-      accountNumber: '',
-      instructions: '',
-      accent: 'cyan',
-      requiresProof: true,
-      enabled: true,
-      displayOrder: 1,
-      availableStores: ['all'],
-    } as PaymentMethodOption)
-  );
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
+  const [checkoutAccessories, setCheckoutAccessories] = useState<CheckoutAccessory[]>([]);
+  const [shippingMethods, setShippingMethods] = useState<any[]>([]);
+  const [additionalFees, setAdditionalFees] = useState<any[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodOption | null>(null);
 
   // QR Code Modal State
   const [qrModalMethod, setQrModalMethod] = useState<PaymentMethodOption | null>(null);
@@ -87,7 +76,7 @@ export const CheckoutPage: React.FC = () => {
   const [orderResult, setOrderResult] = useState<OrderSubmissionResult | null>(null);
 
   // Calculate live dynamic breakdown using CheckoutService Fee Engine
-  const breakdown = CheckoutService.calculateCheckoutBreakdown(
+  const baseBreakdown = CheckoutService.calculateCheckoutBreakdown(
     checkoutStore,
     items,
     selectedAccessoriesState,
@@ -95,6 +84,36 @@ export const CheckoutPage: React.FC = () => {
     undefined,
     selectedAddress?.region || selectedAddress?.province
   );
+  const configuredShippingPhp = shippingMethods[0]
+    ? Number(shippingMethods[0].base_fee_php) + Math.max(0, baseBreakdown.totalVialsCount - Number(shippingMethods[0].base_included_qty)) * Number(shippingMethods[0].additional_per_vial_fee_php)
+    : 0;
+  const configuredFeesPhp = additionalFees.reduce((sum, fee) => sum + (fee.fee_type === 'PERCENTAGE' ? (baseBreakdown.subtotalPhp || 0) * Number(fee.amount_php) / 100 : Number(fee.amount_php)), 0);
+  const configuredAppliedFees = additionalFees.map((fee) => {
+    const amountPhp = fee.fee_type === 'PERCENTAGE'
+      ? (baseBreakdown.subtotalPhp || 0) * Number(fee.amount_php) / 100
+      : Number(fee.amount_php);
+    return {
+      feeId: fee.id,
+      displayName: fee.name,
+      amountPhp,
+      amountUsd: convertPhpToUsd(amountPhp),
+      calculationType: fee.fee_type,
+      description: fee.description || undefined,
+    };
+  });
+  const breakdown = {
+    ...baseBreakdown,
+    shippingMethodId: shippingMethods[0]?.id,
+    shippingMethodName: shippingMethods[0]?.name || '',
+    shippingFeePhp: configuredShippingPhp,
+    shippingFeeUsd: convertPhpToUsd(configuredShippingPhp),
+    appliedFees: configuredAppliedFees,
+    totalFeesPhp: configuredShippingPhp + configuredFeesPhp,
+    totalFeesUsd: convertPhpToUsd(configuredShippingPhp + configuredFeesPhp),
+    grandTotalPhp: Math.max(0, (baseBreakdown.subtotalPhp || 0) + configuredShippingPhp + configuredFeesPhp + convertUsdToPhp(baseBreakdown.accessoriesTotalUsd) - (baseBreakdown.discountPhp || 0)),
+    grandTotalUsd: Math.max(0, baseBreakdown.subtotalUsd + convertPhpToUsd(configuredShippingPhp + configuredFeesPhp) + baseBreakdown.accessoriesTotalUsd - baseBreakdown.discountUsd),
+    earnedPoints: 0,
+  };
 
   // Sync user details if loaded later
   useEffect(() => {
@@ -107,6 +126,19 @@ export const CheckoutPage: React.FC = () => {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    loadProductionCheckoutConfig(String(checkoutStore)).then((config) => {
+      setPaymentMethods(config.paymentMethods);
+      setCheckoutAccessories(config.accessories);
+      accessoryService.saveAccessories(config.accessories);
+      setShippingMethods(config.shippingMethods);
+      setAdditionalFees(config.additionalFees);
+      setSavedAddresses(config.addresses);
+      setSelectedPaymentMethod(config.paymentMethods[0] || null);
+      if (config.addresses[0]) setSelectedAddress(config.addresses[0]);
+    }).catch((error) => setValidationError(error instanceof Error ? error.message : 'Unable to load checkout configuration.'));
+  }, [checkoutStore]);
 
   const handleAccessoryQuantityChange = (accessoryId: string, qty: number) => {
     setSelectedAccessoriesState((prev) => ({
@@ -191,12 +223,13 @@ export const CheckoutPage: React.FC = () => {
         storeType: checkoutStore,
         customerInfo,
         shippingAddress: selectedAddress,
-        paymentMethodId: selectedPaymentMethod.id,
-        paymentProofUrl: paymentProof.previewUrl || undefined,
+        paymentMethodId: selectedPaymentMethod!.id,
+        paymentProofFile: paymentProof.file,
         orderNotes,
         items: items.map((i) => ({
           id: i.id,
           productId: i.productId,
+          variantId: i.variantId,
           name: i.name,
           variantLabel: i.variantLabel,
           quantity: i.quantity,
@@ -296,6 +329,9 @@ export const CheckoutPage: React.FC = () => {
             onAccessoryQuantityChange={handleAccessoryQuantityChange}
             onOpenQrModal={setQrModalMethod}
             validationError={validationError}
+            paymentMethods={paymentMethods}
+            savedAddresses={savedAddresses}
+            accessories={checkoutAccessories}
           />
         </div>
 

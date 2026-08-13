@@ -44,79 +44,9 @@ async function initializeMoqProducts() {
   if (moqProductsStore.length === 0) {
     const raw = await ProductService.getMoqProducts();
 
-    // Map raw mock products to full MoqProduct structure with progress metrics
-    const sampleMoqData: Partial<MoqProduct>[] = [
-      {
-        moqTarget: 500,
-        moqCurrent: 370,
-        moqUnitLabel: 'Kits',
-        manufacturingStatus: 'Almost Reached',
-        estimatedProductionStart: 'Aug 25, 2026',
-        estimatedCompletion: 'Sep 10, 2026',
-        queuePosition: 'Queue #01',
-        qualityControlNotice: 'Analytical Assay & Quality Inspection Post-Synthesis',
-        batchNumber: 'MOQ-TIR-001',
-      },
-      {
-        moqTarget: 250,
-        moqCurrent: 125,
-        moqUnitLabel: 'Kits',
-        manufacturingStatus: 'Collecting Orders',
-        estimatedProductionStart: 'Sep 01, 2026',
-        estimatedCompletion: 'Sep 20, 2026',
-        queuePosition: 'Queue #02',
-        qualityControlNotice: 'Lyophilization purity check & Moisture analysis prior to sterile argon sealing',
-        batchNumber: 'MOQ-RTA-002',
-      },
-      {
-        moqTarget: 100,
-        moqCurrent: 100,
-        moqUnitLabel: 'Kits',
-        manufacturingStatus: 'MOQ Achieved',
-        estimatedProductionStart: 'Aug 15, 2026',
-        estimatedCompletion: 'Aug 28, 2026',
-        queuePosition: 'Scheduled Slot #01',
-        qualityControlNotice: 'cGMP Facility Sterile Lyophilization Tray Verification Completed',
-        batchNumber: 'MOQ-BPC-100',
-      },
-      {
-        moqTarget: 1000,
-        moqCurrent: 820,
-        moqUnitLabel: 'Kits',
-        manufacturingStatus: 'Almost Reached',
-        estimatedProductionStart: 'Sep 05, 2026',
-        estimatedCompletion: 'Sep 22, 2026',
-        queuePosition: 'Queue #04',
-        qualityControlNotice: 'Purity > 99.5% standard with COA generation',
-        batchNumber: 'MOQ-SEM-004',
-      },
-    ];
-
-    moqProductsStore = raw.map((p, idx) => {
-      const extra = sampleMoqData[idx % sampleMoqData.length];
-      const target = extra.moqTarget || 100;
-      const current = extra.moqCurrent || 60;
-      const { percent, remaining } = MoqAutomation.calculateProgress(current, target);
-      const mStatus = extra.manufacturingStatus || MoqAutomation.determineStatus(percent);
-
-      return {
-        ...p,
-        moqTarget: target,
-        moqCurrent: current,
-        moqUnitLabel: extra.moqUnitLabel || 'Kits',
-        moqProgressPercent: percent,
-        moqRemaining: remaining,
-        manufacturingStatus: mStatus,
-        estimatedProductionStart: extra.estimatedProductionStart || 'TBD Post-Fulfillment',
-        estimatedCompletion: extra.estimatedCompletion || '14 Days Post-Start',
-        queuePosition: extra.queuePosition || `Queue #${idx + 1}`,
-        qualityControlNotice:
-          extra.qualityControlNotice ||
-          'All custom synthesis batches are subject to quality inspection and structural validation.',
-        batchNumber: extra.batchNumber || `MOQ-BATCH-${idx + 101}`,
-        storeType: 'moq',
-      };
-    });
+    // Production storefront data must come only from Supabase. Campaign
+    // progress remains absent until real campaign metrics are configured.
+    moqProductsStore = raw.map((product) => ({ ...product, storeType: 'moq' }));
   }
 }
 

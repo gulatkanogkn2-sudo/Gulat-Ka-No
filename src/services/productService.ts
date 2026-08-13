@@ -6,6 +6,7 @@ import {
 } from './productManagementService';
 import { isSupabaseConfigured, getSupabaseClient, hasAuthenticatedSupabaseSession } from '../lib/supabase';
 import { AdminProduct, AdminStoreType, AdminProductStatus } from '../types/adminProduct';
+import { convertPhpToUsd } from '../utils/currencyUtils';
 
 export interface DetailedProduct extends ProductData {
   id: string;
@@ -594,8 +595,10 @@ function mapDbRowToDetailedProduct(row: any, variantsRows: any[] = [], targetSto
     adminNotes: row.admin_notes || undefined,
     category: row.category || 'Active',
     storeType: primaryStore as AdminStoreType,
-    price: row.price_php ?? 0,
-    currency: row.currency || '$',
+    // The UI calculation model uses USD internally while Supabase is
+    // authoritative in PHP. Convert once at the database boundary.
+    price: convertPhpToUsd(Number(row.price_php ?? 0)),
+    currency: '$',
     status: (row.status as AdminProductStatus) || 'Active',
     isVisible: row.is_visible ?? true,
     isFeatured: row.is_featured ?? false,
@@ -621,8 +624,8 @@ function mapDbRowToDetailedProduct(row: any, variantsRows: any[] = [], targetSto
       name: v.name || v.strength || v.size || 'Standard',
       strength: v.strength || undefined,
       size: v.size || undefined,
-      price: v.price_php ?? row.price_php ?? 0,
-      costPrice: v.cost_price_php ?? 0,
+      price: convertPhpToUsd(Number(v.price_php ?? row.price_php ?? 0)),
+      costPrice: convertPhpToUsd(Number(v.cost_price_php ?? 0)),
       minOrder: v.min_order ?? 1,
       orderStep: v.order_step ?? 1,
       inventoryQuantity: v.inventory_quantity ?? undefined,
@@ -686,20 +689,7 @@ export const ProductService = {
       dbProducts = await fetchStoreProductsFromSupabase('groupbuy');
     }
 
-    // Query live admin product store
-    const adminProducts = ProductManagementService.getProductsForStore('groupbuy');
-    const existingIds = new Set(dbProducts.map((p) => p.id));
-    
-    // Merge Supabase products with admin products & mock products that aren't duplicated or deleted
-    let result = [
-      ...dbProducts,
-      ...adminProducts.filter((p) => !existingIds.has(p.id)),
-      ...MOCK_GROUPBUY_PRODUCTS.filter(
-        (p) => !existingIds.has(p.id) &&
-               !adminProducts.some((ap) => ap.id === p.id) &&
-               !ProductManagementService.isProductDeleted(p.id, 'groupbuy')
-      ),
-    ];
+    let result = dbProducts;
 
     if (category && category !== 'all') {
       result = result.filter((p) => p.category === category || p.status?.toLowerCase().includes(category.toLowerCase()));
@@ -729,19 +719,7 @@ export const ProductService = {
       dbProducts = await fetchStoreProductsFromSupabase('onhand');
     }
 
-    // Query live admin product store
-    const adminProducts = ProductManagementService.getProductsForStore('onhand');
-    const existingIds = new Set(dbProducts.map((p) => p.id));
-
-    let result = [
-      ...dbProducts,
-      ...adminProducts.filter((p) => !existingIds.has(p.id)),
-      ...MOCK_ONHAND_PRODUCTS.filter(
-        (p) => !existingIds.has(p.id) &&
-               !adminProducts.some((ap) => ap.id === p.id) &&
-               !ProductManagementService.isProductDeleted(p.id, 'onhand')
-      ),
-    ];
+    let result = dbProducts;
 
     if (category && category !== 'all') {
       result = result.filter((p) => p.category === category);
@@ -771,19 +749,7 @@ export const ProductService = {
       dbProducts = await fetchStoreProductsFromSupabase('moq');
     }
 
-    // Query live admin product store
-    const adminProducts = ProductManagementService.getProductsForStore('moq');
-    const existingIds = new Set(dbProducts.map((p) => p.id));
-
-    let result = [
-      ...dbProducts,
-      ...adminProducts.filter((p) => !existingIds.has(p.id)),
-      ...MOCK_MOQ_PRODUCTS.filter(
-        (p) => !existingIds.has(p.id) &&
-               !adminProducts.some((ap) => ap.id === p.id) &&
-               !ProductManagementService.isProductDeleted(p.id, 'moq')
-      ),
-    ];
+    let result = dbProducts;
 
     if (category && category !== 'all') {
       result = result.filter((p) => p.category === category);
@@ -812,15 +778,14 @@ export const ProductService = {
       return null;
     }
 
-    if (await hasAuthenticatedSupabaseSession()) {
+    if (isSupabaseConfigured) {
       const client = getSupabaseClient();
       if (client) {
         try {
-          const prodUuid = stringToUuid(id);
           const { data: prodRow, error } = await client
             .from('products')
             .select('*, product_variants(*)')
-            .eq('id', prodUuid)
+            .eq('id', id)
             .is('deleted_at', null)
             .maybeSingle();
 
@@ -837,23 +802,6 @@ export const ProductService = {
       }
     }
     
-    // Check Admin Product Management Service
-    const adminProduct = ProductManagementService.getRawProducts().find((p) => p.id === id);
-    if (adminProduct && !ProductManagementService.isProductDeleted(id, adminProduct.storeType)) {
-      return convertAdminToDetailedProduct(adminProduct, adminProduct.storeType || 'groupbuy');
-    }
-
-    // Check if it's an MOQ product and pull enriched metrics from moqService if available
-    if (id.startsWith('moq-')) {
-      const { MOQService } = await import('./moqService');
-      const moqProducts = await MOQService.getProducts();
-      const match = moqProducts.find((p) => p.id === id);
-      if (match && !ProductManagementService.isProductDeleted(id, 'moq')) return match;
-    }
-
-    const all = [...MOCK_GROUPBUY_PRODUCTS, ...MOCK_ONHAND_PRODUCTS, ...MOCK_MOQ_PRODUCTS].filter(
-      (p) => !ProductManagementService.isProductDeleted(p.id)
-    );
-    return all.find((p) => p.id === id) || null;
+    return null;
   },
 };

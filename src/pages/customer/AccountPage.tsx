@@ -22,6 +22,9 @@ import { Link } from 'react-router-dom';
 export const AccountPage: React.FC = () => {
   const { user, logout } = useAuth();
   const [recentOrders, setRecentOrders] = useState<OrderDetail[]>([]);
+  const activeDeliveries = recentOrders.filter((order) =>
+    !['DELIVERED', 'CANCELLED'].includes(String(order.fulfillmentStatus || order.status).toUpperCase())
+  ).length;
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -46,11 +49,11 @@ export const AccountPage: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white tracking-wide">
-                  {user?.fullName || 'Dr. Alexander Vance'}
+                  {user?.fullName || 'Customer'}
                 </h2>
                 <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                   <Mail className="w-3.5 h-3.5 text-slate-500" />
-                  {user?.email || 'alexander.vance@gknlabs.org'}
+                  {user?.email || ''}
                 </p>
               </div>
             </div>
@@ -81,20 +84,20 @@ export const AccountPage: React.FC = () => {
 
             <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
               <span className="text-[10px] text-slate-400 block">Active Deliveries</span>
-              <span className="text-lg font-bold text-[#00D9FF]">1 In Transit</span>
+              <span className="text-lg font-bold text-[#00D9FF]">{activeDeliveries} In Transit</span>
             </div>
 
             <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
               <span className="text-[10px] text-slate-400 block">Reward Points</span>
               <span className="text-lg font-bold text-[#FF2ED1] flex items-center gap-1">
                 <Zap className="w-4 h-4 fill-[#FF2ED1]" />
-                1,450 PTS
+                0 PTS
               </span>
             </div>
 
             <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
               <span className="text-[10px] text-slate-400 block">Member Status</span>
-              <span className="text-lg font-bold text-[#8B5CF6]">Tier II Lab</span>
+              <span className="text-lg font-bold text-[#8B5CF6]">Standard</span>
             </div>
           </div>
         </Card>

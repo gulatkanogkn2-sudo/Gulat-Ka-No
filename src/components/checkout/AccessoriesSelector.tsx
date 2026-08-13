@@ -12,6 +12,7 @@ interface AccessoriesSelectorProps {
   selectedAccessoriesState: Record<string, number>;
   onAccessoryQuantityChange: (accessoryId: string, quantity: number) => void;
   className?: string;
+  accessories?: CheckoutAccessory[];
 }
 
 export const AccessoriesSelector: React.FC<AccessoriesSelectorProps> = ({
@@ -21,18 +22,17 @@ export const AccessoriesSelector: React.FC<AccessoriesSelectorProps> = ({
   selectedAccessoriesState,
   onAccessoryQuantityChange,
   className = '',
+  accessories,
 }) => {
-  const [allAccessories, setAllAccessories] = useState<CheckoutAccessory[]>(() =>
-    accessoryService.getAccessories()
-  );
+  const [allAccessories, setAllAccessories] = useState<CheckoutAccessory[]>(() => accessories || []);
 
   useEffect(() => {
-    setAllAccessories(accessoryService.getAccessories());
+    if (accessories) setAllAccessories(accessories);
     const unsubscribe = accessoryService.subscribe((updated) => {
       setAllAccessories(updated);
     });
     return () => unsubscribe();
-  }, []);
+  }, [accessories]);
 
   const normStore = (storeType || 'groupbuy').toLowerCase();
   const availableAccessories = allAccessories.filter((acc) => {

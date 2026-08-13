@@ -27,14 +27,13 @@ export interface MoqHeaderInfo {
 
 export interface MoqProduct extends DetailedProduct {
   isVisible?: boolean;
-  moqTarget: number;
-  moqCurrent: number;
-  moqUnitLabel: string; // e.g. 'Kits', 'Vials', 'Grams'
-  moqProgressPercent: number;
-  moqRemaining: number;
-  manufacturingStatus: MoqManufacturingStatus;
-  estimatedProductionStart: string;
-  estimatedCompletion: string;
+  moqTarget?: number;
+  moqCurrent?: number;
+  moqUnitLabel?: string; // e.g. 'Kits', 'Vials', 'Grams'
+  moqProgressPercent?: number;
+  moqRemaining?: number;
+  estimatedProductionStart?: string;
+  estimatedCompletion?: string;
   queuePosition?: string;
   qualityControlNotice?: string;
   batchNumber?: string;

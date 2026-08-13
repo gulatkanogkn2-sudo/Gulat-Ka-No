@@ -32,20 +32,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    const loadTrustedProfile = async (authUser: { id: string; email?: string; created_at: string }) => {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, status, created_at')
+        .eq('id', authUser.id)
+        .single();
+      if (error || !profile || profile.status !== 'ACTIVE') {
+        setUser(null);
+        return;
+      }
+      setUser({
+        id: profile.id,
+        email: profile.email || authUser.email || '',
+        fullName: profile.full_name || 'Researcher',
+        role: profile.role as UserRole,
+        createdAt: profile.created_at || authUser.created_at,
+      });
+    };
+
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // For now, getting role from user_metadata. Default to customer.
-          const role = (session.user.user_metadata?.role as UserRole) || 'customer';
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            fullName: session.user.user_metadata?.full_name || 'Researcher',
-            role,
-            createdAt: session.user.created_at,
-          });
-        }
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) await loadTrustedProfile(authUser);
       } catch (err) {
         console.error('Auth initialization error:', err);
       } finally {
@@ -55,16 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const role = (session.user.user_metadata?.role as UserRole) || 'customer';
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          fullName: session.user.user_metadata?.full_name || 'Researcher',
-          role,
-          createdAt: session.user.created_at,
-        });
+        await loadTrustedProfile(session.user);
       } else {
         setUser(null);
       }
@@ -86,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = IS_DEV_MODE || !!user;
-  const isStaff = IS_DEV_MODE || user?.role === 'owner' || user?.role === 'manager' || user?.role === 'staff';
+  const isStaff = IS_DEV_MODE || user?.role === 'OWNER' || user?.role === 'ADMIN' || user?.role === 'STAFF';
 
   return (
     <AuthContext.Provider

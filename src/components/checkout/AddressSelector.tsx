@@ -1,23 +1,24 @@
 import React, { useState } from 'react';
 import { Plus, MapPin, Building, ShieldCheck } from 'lucide-react';
 import { ShippingAddress } from '../../types/checkout';
-import { SAVED_ADDRESSES_MOCK } from '../../services/checkoutService';
 import { AddressCard } from './AddressCard';
 
 interface AddressSelectorProps {
   selectedAddress: ShippingAddress;
   onChange: (address: ShippingAddress) => void;
+  savedAddresses?: ShippingAddress[];
   className?: string;
 }
 
 export const AddressSelector: React.FC<AddressSelectorProps> = ({
   selectedAddress,
   onChange,
+  savedAddresses = [],
   className = '',
 }) => {
   const [useSaved, setUseSaved] = useState<boolean>(true);
   const [selectedSavedId, setSelectedSavedId] = useState<string>(
-    SAVED_ADDRESSES_MOCK[0].id || 'addr-primary'
+    savedAddresses[0]?.id || ''
   );
 
   // Form state for custom/new address
@@ -65,8 +66,8 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
             type="button"
             onClick={() => {
               setUseSaved(true);
-              const found = SAVED_ADDRESSES_MOCK.find((a) => a.id === selectedSavedId) || SAVED_ADDRESSES_MOCK[0];
-              onChange(found);
+              const found = savedAddresses.find((a) => a.id === selectedSavedId) || savedAddresses[0];
+              if (found) onChange(found);
             }}
             className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
               useSaved
@@ -74,7 +75,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Saved ({SAVED_ADDRESSES_MOCK.length})
+            Saved ({savedAddresses.length})
           </button>
           <button
             type="button"
@@ -92,9 +93,9 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
       </div>
 
       {/* Saved Addresses View */}
-      {useSaved ? (
+      {useSaved && savedAddresses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {SAVED_ADDRESSES_MOCK.map((addr) => (
+          {savedAddresses.map((addr) => (
             <AddressCard
               key={addr.id}
               address={addr}

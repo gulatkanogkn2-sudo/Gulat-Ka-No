@@ -207,12 +207,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed)) {
+            // Production products and variants use database UUIDs. Discard any
+            // persisted demo cart entries from earlier preview builds.
+            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            return parsed.filter((item) =>
+              uuidPattern.test(item?.productId) &&
+              (!item?.variantId || uuidPattern.test(item.variantId))
+            );
+          }
         }
       } catch (e) {
         console.error(`Failed to parse ${st} cart storage`, e);
       }
-      return INITIAL_STORE_ITEMS[(st && typeof st === 'string') ? st.toLowerCase() : 'groupbuy'] || [];
+      return [];
     };
 
     return {

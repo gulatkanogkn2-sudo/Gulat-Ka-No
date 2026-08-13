@@ -9,6 +9,7 @@ import {
   CustomerAdminNote,
 } from '../types/customer';
 import { CustomerTierService } from './customerTierService';
+import { fetchCustomers } from './productionService';
 
 // Initial Mock Database for Admin Customer Management
 let ADMIN_MOCK_CUSTOMERS: CustomerDetail[] = [
@@ -673,34 +674,16 @@ export class CustomerManagementService {
     totalPages: number;
     currentPage: number;
   }> {
-    // Simulate lightweight async network latency
-    await new Promise((res) => setTimeout(res, 40));
-
-    let customers = loadCustomersFromStorage();
-    const tierSettings = CustomerTierService.getTierSettings();
-
-    // Dynamically evaluate tiers for fetched list
-    if (tierSettings.enabled) {
-      customers = customers.map((c) => {
-        const qualifyingSpend = CustomerTierService.calculateQualifyingSpending(c.orders || []);
-        const evaluatedTier = CustomerTierService.determineTierForSpending(
-          qualifyingSpend,
-          tierSettings,
-          c.tier,
-          c.isManualTierOverride
-        );
-        return {
-          ...c,
-          qualifyingLifetimeSpending: qualifyingSpend,
-          tier: evaluatedTier,
-          stats: {
-            ...c.stats,
-            lifetimeSpending: qualifyingSpend,
-          },
-        };
-      });
-      saveCustomersToStorage(customers);
-    }
+    const rows = await fetchCustomers();
+    let customers: CustomerDetail[] = rows.map((row: any) => ({
+      id: row.id, customerCode: row.customer_code || row.id.slice(0, 8).toUpperCase(), name: row.full_name,
+      email: row.email, phone: row.phone || '', companyOrInstitution: row.company_or_institution || undefined,
+      avatarUrl: row.avatar_url || undefined, registrationDate: row.created_at, lastLoginDate: row.last_login_at || row.created_at,
+      status: row.status, tier: row.tier, isManualTierOverride: row.is_manual_tier_override,
+      qualifyingLifetimeSpending: Number(row.qualifying_lifetime_spending_php), verificationStatus: row.status === 'ACTIVE' ? 'VERIFIED' : 'UNVERIFIED',
+      addresses: [], billingInfo: {} as any, wishlist: [], rewardPoints: { currentBalance: row.reward_points, lifetimeEarned: row.reward_points, lifetimeRedeemed: 0, tierProgressPercentage: 0, nextTier: null },
+      adminNotes: [], loginActivity: [], orders: [], stats: { lifetimeSpending: Number(row.qualifying_lifetime_spending_php), ordersCompleted: 0, totalOrders: 0, averageOrderValue: 0, favoriteStore: 'N/A', mostPurchasedProduct: 'N/A', lastPurchaseDate: '' },
+    }));
 
     let result = [...customers];
 
