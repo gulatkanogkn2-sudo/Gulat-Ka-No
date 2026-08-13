@@ -1,12 +1,27 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
-const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/^["']|["']$/g, '');
-const rawKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim().replace(/^["']|["']$/g, '');
+function formatSupabaseUrl(raw: string): string {
+  if (!raw) return '';
+  let urlStr = raw.trim().replace(/^["']|["']$/g, '');
+  if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
+    urlStr = `https://${urlStr}`;
+  }
+  try {
+    const parsed = new URL(urlStr);
+    const pathname = parsed.pathname
+      .replace(/\/rest\/v1\/?$/i, '')
+      .replace(/\/+$/, '');
+    return `${parsed.origin}${pathname}`;
+  } catch {
+    return urlStr
+      .replace(/\/rest\/v1\/?$/i, '')
+      .replace(/\/+$/, '');
+  }
+}
 
-// Clean trailing slashes to prevent PostgREST PGRST125 path errors (e.g. //rest/v1)
-export const supabaseUrl = rawUrl.replace(/\/+$/, '');
-export const supabaseAnonKey = rawKey;
+export const supabaseUrl = formatSupabaseUrl(import.meta.env.VITE_SUPABASE_URL || '');
+export const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim().replace(/^["']|["']$/g, '');
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 

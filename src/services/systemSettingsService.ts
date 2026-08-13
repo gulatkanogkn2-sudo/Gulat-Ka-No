@@ -126,13 +126,15 @@ class SystemSettingsService {
     if (!client) return;
 
     try {
-      let updatedBy: string | null = 'Admin User';
       const { data: { session } } = await client.auth.getSession();
-      if (session?.user?.email) {
-        updatedBy = session.user.email;
-      } else if (session?.user?.id) {
-        updatedBy = session.user.id;
+      if (!session?.user?.id) {
+        // Database security policies (RLS) require an authenticated admin/owner Supabase Auth session to write store configs.
+        // When running under development mode bypass or unauthenticated client, skip remote writes and maintain local state.
+        console.info(`[SystemSettingsService] Skipping Supabase store_config write for ${storeType}: A real authenticated Supabase Auth session (admin/owner) is required by RLS.`);
+        return;
       }
+
+      const updatedBy = session.user.id;
 
       const payload = {
         store_type: storeType,
@@ -149,7 +151,11 @@ class SystemSettingsService {
         .upsert(payload, { onConflict: 'store_type' });
 
       if (error) {
-        console.error(`[SystemSettingsService] Error saving store_config for ${storeType}:`, error);
+        if (error.code === '42501') {
+          console.warn(`[SystemSettingsService] RLS policy blocked saving store_config for ${storeType}: User ${updatedBy} must have an authorized admin/owner profile role in Supabase.`);
+        } else {
+          console.error(`[SystemSettingsService] Error saving store_config for ${storeType}:`, error);
+        }
       }
     } catch (err) {
       console.error(`[SystemSettingsService] Failed to save store_config for ${storeType}:`, err);
