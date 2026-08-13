@@ -725,23 +725,10 @@ export class OrderManagementService {
    * Get dynamic list of available assigned batches, store-aware
    */
   static getAvailableBatches(storeFilter?: string): string[] {
-    OrderManagementService.initializeOrders();
-    let orders = [...ADMIN_MOCK_ORDERS];
-    if (storeFilter && storeFilter !== 'all') {
-      orders = orders.filter((o) => o.storeType === storeFilter);
-    }
-
-    const batches = new Set<string>();
-    orders.forEach((o) => {
-      if (o.assignedBatch && o.assignedBatch.trim()) {
-        batches.add(o.assignedBatch.trim());
-      }
-      if (o.groupBuyData?.batchNumber && o.groupBuyData.batchNumber.trim()) {
-        batches.add(o.groupBuyData.batchNumber.trim());
-      }
-    });
-
-    return Array.from(batches).sort();
+    // Production orders currently have no authoritative batch persistence contract.
+    // Do not expose demonstration batch identifiers as operational filter values.
+    void storeFilter;
+    return [];
   }
 
   /**
