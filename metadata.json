@@ -1,0 +1,6 @@
+{
+  "name": "GKN V2",
+  "description": "Premium peptide research e-commerce platform and business management system",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

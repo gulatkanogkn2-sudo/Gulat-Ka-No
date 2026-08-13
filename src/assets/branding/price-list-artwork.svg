@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="priceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#00D9FF" />
+    </linearGradient>
+    <filter id="priceGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="400" height="400" rx="16" fill="#050810" stroke="#3B82F6" stroke-width="2"/>
+  <circle cx="200" cy="200" r="140" fill="#3B82F6" opacity="0.1" filter="url(#priceGlow)"/>
+
+  <!-- Price Tag / Catalog Graphic -->
+  <rect x="110" y="80" width="180" height="240" rx="12" fill="#0B132B" stroke="url(#priceGrad)" stroke-width="3" filter="url(#priceGlow)"/>
+  
+  <rect x="130" y="110" width="140" height="30" rx="6" fill="#050810" stroke="#00D9FF" stroke-width="1"/>
+  <text x="200" y="130" font-family="monospace" font-weight="800" font-size="12" fill="#00D9FF" text-anchor="middle">PRICING CATALOG</text>
+
+  <g stroke="#94A3B8" stroke-width="2">
+    <line x1="130" y1="170" x2="220" y2="170"/>
+    <line x1="130" y1="200" x2="210" y2="200"/>
+    <line x1="130" y1="230" x2="225" y2="230"/>
+    <line x1="130" y1="260" x2="200" y2="260"/>
+  </g>
+
+  <g fill="#00E676" font-family="monospace" font-weight="700" font-size="11" text-anchor="end">
+    <text x="270" y="174">$120</text>
+    <text x="270" y="204">$240</text>
+    <text x="270" y="234">$350</text>
+    <text x="270" y="264">$180</text>
+  </g>
+</svg>

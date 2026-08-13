@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="protGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2ED1" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <filter id="protGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="400" height="400" rx="16" fill="#050810" stroke="#FF2ED1" stroke-width="2"/>
+  <circle cx="200" cy="200" r="140" fill="#FF2ED1" opacity="0.1" filter="url(#protGlow)"/>
+
+  <!-- Protocol Folder Graphic -->
+  <path d="M 100 120 L 170 120 L 190 145 L 300 145 A 12 12 0 0 1 312 157 L 312 290 A 12 12 0 0 1 300 302 L 100 302 A 12 12 0 0 1 88 290 L 88 132 A 12 12 0 0 1 100 120 Z" fill="#0B132B" stroke="url(#protGrad)" stroke-width="3" filter="url(#protGlow)"/>
+  
+  <line x1="120" y1="190" x2="280" y2="190" stroke="#FF2ED1" stroke-width="2"/>
+  <line x1="120" y1="220" x2="250" y2="220" stroke="#94A3B8" stroke-width="2"/>
+  <line x1="120" y1="250" x2="220" y2="250" stroke="#94A3B8" stroke-width="2"/>
+</svg>
