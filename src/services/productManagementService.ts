@@ -9,6 +9,7 @@ import {
 } from '../types/adminProduct';
 import { getStoreSellingUnitConfig } from '../utils/vialCalculation';
 import type { DetailedProduct } from './productService';
+import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 
 export function isProductInStore(p: AdminProduct, targetStore: string): boolean {
   if (ProductManagementService.isProductDeleted(p.id, targetStore)) {
@@ -470,12 +471,239 @@ function saveProductsToStorage(products: AdminProduct[]) {
 let deletedStoreProducts: Set<string> = loadDeletedFromStorage();
 let mockProducts: AdminProduct[] = loadProductsFromStorage(SEED_PRODUCTS);
 
+function mapDbRowToAdminProduct(row: any, variantsRows: any[] = []): AdminProduct {
+  const storeSpecific = (row.store_specific_settings_jsonb as any) || {};
+
+  return {
+    id: row.id,
+    name: row.name,
+    scientificName: row.scientific_name || undefined,
+    shortDescription: row.short_description || undefined,
+    fullDescription: row.full_description || undefined,
+    adminNotes: row.admin_notes || undefined,
+    category: row.category || 'Active',
+    storeType: (row.primary_store_type as AdminStoreType) || 'groupbuy',
+    price: row.price_php ?? 0,
+    currency: row.currency || '$',
+    status: (row.status as AdminProductStatus) || 'Active',
+    isVisible: row.is_visible ?? true,
+    isFeatured: row.is_featured ?? false,
+    imageUrl: row.image_url || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80',
+    gallery: row.gallery || undefined,
+    casNumber: row.cas_number || undefined,
+    testingLab: row.testing_lab || undefined,
+    purity: row.purity || undefined,
+    sellingUnit: (row.selling_unit as 'vial' | 'kit') || 'vial',
+    vialsPerKit: row.vials_per_kit ?? 10,
+    groupBuySettings: storeSpecific.groupBuySettings || undefined,
+    onHandSettings: storeSpecific.onHandSettings || (row.inventory_quantity != null ? {
+      inventoryQuantity: row.inventory_quantity,
+      lowStockThreshold: 20,
+      dispatchTime: 'Same-Day Cold Dispatch (24H)',
+    } : undefined),
+    moqSettings: storeSpecific.moqSettings || undefined,
+    storeSettings: storeSpecific.storeSettings || undefined,
+    lastUpdated: row.updated_at ? row.updated_at.replace('T', ' ').slice(0, 16) : new Date().toISOString().replace('T', ' ').slice(0, 16),
+    updatedBy: storeSpecific.updatedBy || 'Admin Team',
+    variants: (variantsRows || []).map((v) => ({
+      id: v.id,
+      name: v.name || 'Standard',
+      strength: v.strength || undefined,
+      size: v.size || undefined,
+      price: v.price_php ?? row.price_php ?? 0,
+      costPrice: v.cost_price_php ?? 0,
+      minOrder: v.min_order ?? 1,
+      orderStep: v.order_step ?? 1,
+      inventoryQuantity: v.inventory_quantity ?? undefined,
+      sku: v.sku || undefined,
+    })),
+  };
+}
+
+function mapAdminProductToDbRow(p: AdminProduct): any {
+  const storeSpecific = {
+    groupBuySettings: p.groupBuySettings,
+    onHandSettings: p.onHandSettings,
+    moqSettings: p.moqSettings,
+    storeSettings: p.storeSettings,
+    updatedBy: p.updatedBy || 'Admin Team',
+  };
+
+  const primaryStore = (p.storeType || 'groupbuy').toLowerCase();
+  const validStore = (['groupbuy', 'onhand', 'moq'].includes(primaryStore) ? primaryStore : 'groupbuy') as 'groupbuy' | 'onhand' | 'moq';
+
+  return {
+    id: p.id,
+    name: p.name,
+    scientific_name: p.scientificName || null,
+    short_description: p.shortDescription || null,
+    full_description: p.fullDescription || null,
+    admin_notes: p.adminNotes || null,
+    category: p.category || 'Active',
+    primary_store_type: validStore,
+    price_php: p.price ?? 0,
+    currency: p.currency || '$',
+    status: p.status || 'Active',
+    is_visible: p.isVisible ?? true,
+    is_featured: p.isFeatured ?? false,
+    image_url: p.imageUrl || null,
+    gallery: p.gallery || null,
+    cas_number: p.casNumber || null,
+    testing_lab: p.testingLab || null,
+    purity: p.purity || null,
+    selling_unit: (p.sellingUnit === 'kit' ? 'kit' : 'vial'),
+    vials_per_kit: p.vialsPerKit ?? 10,
+    inventory_quantity: p.onHandSettings?.inventoryQuantity ?? p.variants?.[0]?.inventoryQuantity ?? null,
+    store_specific_settings_jsonb: storeSpecific as any,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function mapAdminVariantToDbRow(productId: string, v: AdminProductVariant): any {
+  return {
+    id: v.id,
+    product_id: productId,
+    name: v.name || 'Standard',
+    strength: v.strength || null,
+    size: v.size || null,
+    price_php: v.price ?? 0,
+    cost_price_php: v.costPrice ?? 0,
+    min_order: v.minOrder ?? 1,
+    order_step: v.orderStep ?? 1,
+    inventory_quantity: v.inventoryQuantity ?? null,
+    sku: v.sku || null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function saveProductToSupabase(p: AdminProduct): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  try {
+    const prodRow = mapAdminProductToDbRow(p);
+    const { error: prodErr } = await client
+      .from('products')
+      .upsert(prodRow, { onConflict: 'id' });
+
+    if (prodErr) {
+      console.error(`[ProductManagementService] Error saving product ${p.id} to Supabase:`, prodErr);
+      return;
+    }
+
+    if (p.variants && p.variants.length > 0) {
+      const varRows = p.variants.map((v) => mapAdminVariantToDbRow(p.id, v));
+      const { error: varErr } = await client
+        .from('product_variants')
+        .upsert(varRows, { onConflict: 'id' });
+
+      if (varErr) {
+        console.error(`[ProductManagementService] Error saving variants for product ${p.id} to Supabase:`, varErr);
+      }
+
+      const currentVariantIds = p.variants.map((v) => v.id);
+      const { data: existingVars } = await client
+        .from('product_variants')
+        .select('id')
+        .eq('product_id', p.id);
+
+      if (existingVars && existingVars.length > 0) {
+        const toDelete = existingVars
+          .map((ev) => ev.id)
+          .filter((vid) => !currentVariantIds.includes(vid));
+
+        if (toDelete.length > 0) {
+          await client.from('product_variants').delete().in('id', toDelete);
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[ProductManagementService] Exception saving product ${p.id} to Supabase:`, err);
+  }
+}
+
+async function deleteProductFromSupabase(id: string): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  try {
+    const altId = id.startsWith('prod-') ? id.replace('prod-', '') : `prod-${id}`;
+    const nowIso = new Date().toISOString();
+
+    const { error } = await client
+      .from('products')
+      .update({ deleted_at: nowIso, updated_at: nowIso })
+      .or(`id.eq.${id},id.eq.${altId}`);
+
+    if (error) {
+      console.error(`[ProductManagementService] Error deleting product ${id} from Supabase:`, error);
+    }
+  } catch (err) {
+    console.error(`[ProductManagementService] Exception deleting product ${id} from Supabase:`, err);
+  }
+}
+
+async function syncFromSupabase(): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  try {
+    const { data: prodData, error: prodError } = await client
+      .from('products')
+      .select('*')
+      .is('deleted_at', null);
+
+    if (prodError) {
+      console.error('[ProductManagementService] Error fetching products from Supabase:', prodError);
+      return;
+    }
+
+    if (prodData && prodData.length > 0) {
+      const { data: varData, error: varError } = await client
+        .from('product_variants')
+        .select('*');
+
+      if (varError) {
+        console.error('[ProductManagementService] Error fetching product_variants from Supabase:', varError);
+      }
+
+      const variantsByProdId = new Map<string, any[]>();
+      (varData || []).forEach((v) => {
+        const list = variantsByProdId.get(v.product_id) || [];
+        list.push(v);
+        variantsByProdId.set(v.product_id, list);
+      });
+
+      const loadedProducts: AdminProduct[] = prodData.map((row) =>
+        mapDbRowToAdminProduct(row, variantsByProdId.get(row.id) || [])
+      );
+
+      mockProducts = loadedProducts;
+      saveProductsToStorage(mockProducts);
+    } else {
+      console.info('[ProductManagementService] Supabase products table is empty. Seeding default products...');
+      for (const p of SEED_PRODUCTS) {
+        await saveProductToSupabase(p);
+      }
+    }
+  } catch (err) {
+    console.error('[ProductManagementService] Exception during syncFromSupabase:', err);
+  }
+}
+
 export const ProductManagementService = {
   /**
    * Get filtered products with pagination & store counts
    */
   async getProducts(params: ProductFilterParams = {}): Promise<ProductListResult> {
-    await new Promise((resolve) => setTimeout(resolve, 80));
+    if (isSupabaseConfigured) {
+      await syncFromSupabase();
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    }
 
     const {
       search = '',
@@ -564,8 +792,31 @@ export const ProductManagementService = {
    * Get single Product by ID
    */
   async getProductById(id: string): Promise<AdminProduct | null> {
+    if (isSupabaseConfigured) {
+      const client = getSupabaseClient();
+      if (client) {
+        const altId = id.startsWith('prod-') ? id.replace('prod-', '') : `prod-${id}`;
+        try {
+          const { data: prod, error } = await client
+            .from('products')
+            .select('*, product_variants(*)')
+            .or(`id.eq.${id},id.eq.${altId}`)
+            .is('deleted_at', null)
+            .maybeSingle();
+
+          if (!error && prod) {
+            const variants = (prod as any).product_variants || [];
+            return mapDbRowToAdminProduct(prod, variants);
+          }
+        } catch (err) {
+          console.error('[ProductManagementService] Error getting product by ID from Supabase:', err);
+        }
+      }
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 40));
-    const found = mockProducts.find((p) => p.id === id);
+    const altId = id.startsWith('prod-') ? id.replace('prod-', '') : `prod-${id}`;
+    const found = mockProducts.find((p) => p.id === id || p.id === altId);
     return found ? JSON.parse(JSON.stringify(found)) : null;
   },
 
@@ -614,6 +865,11 @@ export const ProductManagementService = {
 
     mockProducts = [newProduct, ...mockProducts];
     saveProductsToStorage(mockProducts);
+
+    if (isSupabaseConfigured) {
+      await saveProductToSupabase(newProduct);
+    }
+
     return JSON.parse(JSON.stringify(newProduct));
   },
 
@@ -623,7 +879,8 @@ export const ProductManagementService = {
   async updateProduct(id: string, updates: Partial<AdminProduct>): Promise<AdminProduct> {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const index = mockProducts.findIndex((p) => p.id === id);
+    const altId = id.startsWith('prod-') ? id.replace('prod-', '') : `prod-${id}`;
+    const index = mockProducts.findIndex((p) => p.id === id || p.id === altId);
     if (index === -1) {
       throw new Error(`Product with ID ${id} not found.`);
     }
@@ -638,6 +895,11 @@ export const ProductManagementService = {
 
     mockProducts[index] = updated;
     saveProductsToStorage(mockProducts);
+
+    if (isSupabaseConfigured) {
+      await saveProductToSupabase(updated);
+    }
+
     return JSON.parse(JSON.stringify(updated));
   },
 
@@ -705,6 +967,11 @@ export const ProductManagementService = {
     }
 
     saveProductsToStorage(mockProducts);
+
+    if (isSupabaseConfigured) {
+      await deleteProductFromSupabase(id);
+    }
+
     return true;
   },
 
@@ -727,9 +994,7 @@ export const ProductManagementService = {
     duplicated.lastUpdated = now;
     duplicated.updatedBy = 'Admin Team';
 
-    mockProducts = [duplicated, ...mockProducts];
-    saveProductsToStorage(mockProducts);
-    return JSON.parse(JSON.stringify(duplicated));
+    return this.createProduct(duplicated);
   },
 
   /**
@@ -774,6 +1039,21 @@ export const ProductManagementService = {
     });
 
     saveProductsToStorage(mockProducts);
+
+    if (isSupabaseConfigured) {
+      const client = getSupabaseClient();
+      if (client && productIds.length > 0) {
+        try {
+          await client
+            .from('products')
+            .update({ status, updated_at: new Date().toISOString() })
+            .in('id', productIds);
+        } catch (err) {
+          console.error('[ProductManagementService] Error in bulkUpdateStatus on Supabase:', err);
+        }
+      }
+    }
+
     return updatedCount;
   },
 
@@ -1058,7 +1338,13 @@ export const ProductManagementService = {
       mockProducts = [newProduct, ...mockProducts];
       createdProductsCount++;
       totalVariantsCount += pData.variants.length;
+
+      if (isSupabaseConfigured) {
+        await saveProductToSupabase(newProduct);
+      }
     }
+
+    saveProductsToStorage(mockProducts);
 
     log.push(`Imported ${createdProductsCount} products with ${totalVariantsCount} variants into ${storeToUse.toUpperCase()} store.`);
     return {
