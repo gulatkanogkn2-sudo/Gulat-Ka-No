@@ -1,5 +1,5 @@
 import React from 'react';
-import gknLogo from './gkn-logo.svg';
+const gknLogo = '/gkn-logo.svg';
 import gknHeroBackground from './gkn-hero-background.jpg';
 import groupbuyBackground from './groupbuy-background.jpg';
 import onhandBackground from './onhand-background.jpg';

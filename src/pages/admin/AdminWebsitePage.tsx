@@ -1,36 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
   Globe,
   Layout,
-  Megaphone,
   Store,
-  Layers,
-  BookOpen,
-  Menu,
+  Columns,
   Search,
   CheckCircle2,
-  Save,
   Send,
   Eye,
   RotateCcw,
   Download,
   Upload,
   Sparkles,
-  Columns,
-  Monitor,
   FileText,
 } from 'lucide-react';
-import { Card } from '../../components/common/Card';
 import { WebsiteManagerService } from '../../services/websiteManagerService';
 import { WebsiteConfig } from '../../types/websiteManager';
 import { BrandingEditor } from '../../components/admin/website/BrandingEditor';
 import { HeroEditor } from '../../components/admin/website/HeroEditor';
-import { AnnouncementBarEditor } from '../../components/admin/website/AnnouncementBarEditor';
 import { StoreCardsEditor } from '../../components/admin/website/StoreCardsEditor';
-import { HomepageCardsEditor } from '../../components/admin/website/HomepageCardsEditor';
-import { ResearchHubEditor } from '../../components/admin/website/ResearchHubEditor';
-import { NavigationEditor } from '../../components/admin/website/NavigationEditor';
 import { FooterEditor } from '../../components/admin/website/FooterEditor';
 import { SEOEditor } from '../../components/admin/website/SEOEditor';
 import { StaticPagesEditor } from '../../components/admin/website/StaticPagesEditor';
@@ -40,23 +29,17 @@ import { ConfirmModal } from '../../components/common/ConfirmModal';
 type TabKey =
   | 'branding'
   | 'hero'
-  | 'announcements'
   | 'store-cards'
-  | 'homepage-cards'
-  | 'research-hub'
-  | 'navigation'
   | 'footer'
   | 'static-pages'
   | 'seo';
 
 export const AdminWebsitePage: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [config, setConfig] = useState<WebsiteConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('branding');
-  const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isResetDefaultsConfirmOpen, setIsResetDefaultsConfirmOpen] = useState(false);
@@ -68,8 +51,6 @@ export const AdminWebsitePage: React.FC = () => {
     const path = location.pathname;
     if (path.includes('/admin/website/homepage')) {
       setActiveTab('hero');
-    } else if (path.includes('/admin/website/announcements')) {
-      setActiveTab('announcements');
     } else if (path.includes('/admin/website/theme')) {
       setActiveTab('branding');
     } else if (path.includes('/admin/website/footer')) {
@@ -104,13 +85,6 @@ export const AdminWebsitePage: React.FC = () => {
     setTimeout(() => {
       setToastMessage(null);
     }, 3500);
-  };
-
-  const handleSaveDraft = async () => {
-    if (!config) return;
-    setIsSaving(true);
-    showToast('Website configuration draft saved successfully.');
-    setIsSaving(false);
   };
 
   const handlePublish = async () => {
@@ -168,12 +142,8 @@ export const AdminWebsitePage: React.FC = () => {
 
   const tabList: { key: TabKey; label: string; icon: React.FC<{ className?: string }> }[] = [
     { key: 'branding', label: 'Branding & Logo', icon: Globe },
-    { key: 'hero', label: 'Hero Banner', icon: Layout },
-    { key: 'announcements', label: 'Announcements', icon: Megaphone },
-    { key: 'store-cards', label: 'Store Cards', icon: Store },
-    { key: 'homepage-cards', label: 'Spotlights', icon: Layers },
-    { key: 'research-hub', label: 'Research Hub', icon: BookOpen },
-    { key: 'navigation', label: 'Navigation', icon: Menu },
+    { key: 'hero', label: 'Homepage Banner', icon: Layout },
+    { key: 'store-cards', label: 'Store Card Artwork', icon: Store },
     { key: 'footer', label: 'Footer & Socials', icon: Columns },
     { key: 'static-pages', label: 'Static Pages CMS', icon: FileText },
     { key: 'seo', label: 'SEO & Analytics', icon: Search },
@@ -208,10 +178,10 @@ export const AdminWebsitePage: React.FC = () => {
           </div>
 
           <h1 className="text-xl font-bold text-white mt-1.5 flex items-center gap-2">
-            <Globe className="w-6 h-6 text-cyan-400" /> Website Manager & Storefront CMS
+            <Globe className="w-6 h-6 text-cyan-400" /> Website Manager & Storefront Artwork
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Update storefront logos, hero banners, store cards, navigation links, and SEO metadata.
+            Update storefront logos, home promotional banner, store card artwork, and SEO metadata.
           </p>
         </div>
 
@@ -316,47 +286,11 @@ export const AdminWebsitePage: React.FC = () => {
             />
           )}
 
-          {activeTab === 'announcements' && (
-            <AnnouncementBarEditor
-              announcement={config.announcement}
-              onChange={(updated) =>
-                WebsiteManagerService.updateAnnouncementBar(updated).then(setConfig)
-              }
-            />
-          )}
-
           {activeTab === 'store-cards' && (
             <StoreCardsEditor
               storeCards={config.storeCards}
               onChange={(updated) =>
                 WebsiteManagerService.updateStoreCards(updated).then(setConfig)
-              }
-            />
-          )}
-
-          {activeTab === 'homepage-cards' && (
-            <HomepageCardsEditor
-              homepageCards={config.homepageCards}
-              onChange={(updated) =>
-                WebsiteManagerService.updateHomepageCards(updated).then(setConfig)
-              }
-            />
-          )}
-
-          {activeTab === 'research-hub' && (
-            <ResearchHubEditor
-              researchHub={config.researchHub}
-              onChange={(updated) =>
-                WebsiteManagerService.updateResearchHub(updated).then(setConfig)
-              }
-            />
-          )}
-
-          {activeTab === 'navigation' && (
-            <NavigationEditor
-              menuItems={config.navigation.menuItems}
-              onChange={(updated) =>
-                WebsiteManagerService.updateNavigation(updated).then(setConfig)
               }
             />
           )}
@@ -368,7 +302,9 @@ export const AdminWebsitePage: React.FC = () => {
             />
           )}
 
-          {activeTab === 'static-pages' && <StaticPagesEditor />}
+          {activeTab === 'static-pages' && (
+            <StaticPagesEditor />
+          )}
 
           {activeTab === 'seo' && (
             <SEOEditor
@@ -378,32 +314,37 @@ export const AdminWebsitePage: React.FC = () => {
           )}
         </div>
 
-        {/* Live Preview Column (Split View Mode) */}
+        {/* Live Split Preview Panel */}
         {showSplitPreview && (
-          <div className="sticky top-6 h-[85vh] hidden lg:block">
+          <div className="sticky top-6 h-[calc(100vh-120px)] hidden lg:block">
             <WebsiteLivePreview config={config} />
           </div>
         )}
       </div>
 
-      {/* Modal Full Live Preview */}
-      <WebsiteLivePreview
-        config={config}
-        isOpen={showLivePreviewModal}
-        onClose={() => setShowLivePreviewModal(false)}
-        isModalMode={true}
-      />
+      {/* Full Modal Preview */}
+      {showLivePreviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md p-4 sm:p-8 flex items-center justify-center animate-in fade-in">
+          <div className="w-full h-full max-w-7xl max-h-[90vh]">
+            <WebsiteLivePreview
+              config={config}
+              isModalMode={true}
+              isOpen={showLivePreviewModal}
+              onClose={() => setShowLivePreviewModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
-      {/* Reset Defaults Confirm Modal */}
+      {/* Confirmation Modal */}
       <ConfirmModal
         isOpen={isResetDefaultsConfirmOpen}
-        onClose={() => setIsResetDefaultsConfirmOpen(false)}
+        title="Reset Website Configuration"
+        message="Are you sure you want to restore the website configuration to factory defaults? All custom logos, banners, store cards, and text changes will be reset."
+        confirmText="Reset to Defaults"
+        confirmVariant="danger"
         onConfirm={confirmResetDefaults}
-        title="Reset Website Content"
-        message="Are you sure you want to reset all website content to factory default GKN template? All hero sections, card layouts, and SEO configurations will be restored."
-        confirmText="Reset Website Template"
-        cancelText="Cancel"
-        variant="warning"
+        onCancel={() => setIsResetDefaultsConfirmOpen(false)}
       />
     </div>
   );

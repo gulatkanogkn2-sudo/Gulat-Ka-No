@@ -20,8 +20,10 @@ function formatSupabaseUrl(raw: string): string {
   }
 }
 
-export const supabaseUrl = formatSupabaseUrl(import.meta.env.VITE_SUPABASE_URL || '');
-export const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim().replace(/^["']|["']$/g, '');
+const rawEnv = typeof import.meta !== 'undefined' && import.meta?.env ? import.meta.env : (typeof process !== 'undefined' ? process.env : {}) as any;
+
+export const supabaseUrl = formatSupabaseUrl(rawEnv?.VITE_SUPABASE_URL || rawEnv?.SUPABASE_URL || '');
+export const supabaseAnonKey = (rawEnv?.VITE_SUPABASE_ANON_KEY || rawEnv?.SUPABASE_ANON_KEY || '').trim().replace(/^["']|["']$/g, '');
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 

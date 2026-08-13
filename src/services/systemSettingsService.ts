@@ -1,4 +1,11 @@
-import { SystemSettings, StoreConfig } from '../types/systemSettings';
+import {
+  SystemSettings,
+  StoreConfig,
+  ConfigurableShippingMethod,
+  ConfigurableAdditionalFee,
+  ConfigurablePaymentMethod,
+  PaymentMethodType,
+} from '../types/systemSettings';
 import { DEFAULT_SYSTEM_SETTINGS } from '../data/defaultSystemSettings';
 import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 import { Json } from '../types/supabase';
@@ -19,15 +26,17 @@ class SystemSettingsService {
    */
   public getSettings(): SystemSettings {
     if (!this.cachedSettings) {
-      try {
-        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored) as SystemSettings;
-          // Deep merge with defaults to ensure any newly added setting keys exist
-          this.cachedSettings = this.mergeWithDefaults(parsed);
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored) as SystemSettings;
+            // Deep merge with defaults to ensure any newly added setting keys exist
+            this.cachedSettings = this.mergeWithDefaults(parsed);
+          }
+        } catch (error) {
+          console.error('[SystemSettingsService] Error reading settings from localStorage:', error);
         }
-      } catch (error) {
-        console.error('[SystemSettingsService] Error reading settings from localStorage:', error);
       }
 
       if (!this.cachedSettings) {
@@ -44,7 +53,7 @@ class SystemSettingsService {
   }
 
   /**
-   * Fetch store configurations from Supabase store_configs table and merge into cached settings
+   * Fetch store configurations, shipping methods, additional fees, payment methods, and system settings from Supabase
    */
   public async syncFromSupabase(): Promise<void> {
     if (!isSupabaseConfigured || this.isSupabaseSyncing) return;
@@ -53,17 +62,15 @@ class SystemSettingsService {
 
     this.isSupabaseSyncing = true;
     try {
-      const { data, error } = await client.from('store_configs').select('*');
-      if (error) {
-        console.error('[SystemSettingsService] Error fetching store_configs:', error);
-        return;
-      }
+      const currentSettings = this.cachedSettings || this.getSettings();
+      let hasUpdates = false;
+      const newSettings: SystemSettings = { ...currentSettings };
 
-      if (data && data.length > 0) {
-        const currentSettings = this.cachedSettings || this.getSettings();
-        const updatedStores = { ...currentSettings.stores };
-
-        data.forEach((row) => {
+      // 1. Sync store_configs
+      const { data: storeData, error: storeError } = await client.from('store_configs').select('*');
+      if (!storeError && storeData && storeData.length > 0) {
+        const updatedStores = { ...newSettings.stores };
+        storeData.forEach((row) => {
           const storeKey = row.store_type as 'groupbuy' | 'onhand' | 'moq';
           if (!['groupbuy', 'onhand', 'moq'].includes(storeKey)) return;
 
@@ -89,22 +96,105 @@ class SystemSettingsService {
             },
           };
         });
+        newSettings.stores = updatedStores;
+        hasUpdates = true;
+      }
 
-        this.cachedSettings = {
-          ...currentSettings,
-          stores: updatedStores,
+      // 2. Sync shipping_methods
+      const { data: shippingData, error: shippingError } = await client.from('shipping_methods').select('*').order('created_at');
+      if (!shippingError && shippingData && shippingData.length > 0) {
+        const mappedMethods: ConfigurableShippingMethod[] = shippingData.map((row: any, idx: number) => ({
+          id: row.id,
+          name: row.name,
+          description: (row.settings_jsonb as any)?.description || 'Standard Insured Dispatch',
+          enabled: Boolean(row.is_enabled),
+          displayOrder: row.sort_order || idx + 1,
+          availableStores: row.available_stores || ['all'],
+          calculationType: (Number(row.base_included_qty) > 0 || Number(row.additional_per_vial_fee_php) > 0) ? 'base_additional' : 'fixed',
+          baseFee: Number(row.base_fee_php || 0),
+          baseIncludedQty: Number(row.base_included_qty || 0),
+          additionalPerVialFee: Number(row.additional_per_vial_fee_php || 0),
+          regionalRates: Array.isArray(row.regional_rates_jsonb) ? row.regional_rates_jsonb : [],
+          minOrderAmount: 0,
+          minQuantity: 0,
+        }));
+        newSettings.shipping = {
+          ...newSettings.shipping,
+          methods: mappedMethods,
         };
-        this.saveToStorage(this.cachedSettings);
-        this.notifyListeners(this.cachedSettings);
-      } else {
-        // Seed default store configurations to Supabase if table is empty
-        const currentSettings = this.cachedSettings || this.getSettings();
-        const storeKeys: Array<'groupbuy' | 'onhand' | 'moq'> = ['groupbuy', 'onhand', 'moq'];
-        for (const storeKey of storeKeys) {
-          if (currentSettings.stores[storeKey]) {
-            await this.saveStoreConfigToSupabase(storeKey, currentSettings.stores[storeKey]);
+        hasUpdates = true;
+      }
+
+      // 3. Sync additional_fees
+      const { data: feeData, error: feeError } = await client.from('additional_fees').select('*').order('created_at');
+      if (!feeError && feeData && feeData.length > 0) {
+        const mappedFees: ConfigurableAdditionalFee[] = feeData.map((row: any, idx: number) => ({
+          id: row.id,
+          name: row.name,
+          displayName: row.name,
+          description: row.description || '',
+          enabled: Boolean(row.is_enabled),
+          type: 'custom_fee',
+          calculationType: (row.fee_type || 'fixed').toLowerCase() as any,
+          amount: Number(row.amount_php || 0),
+          availableStores: row.available_stores || ['all'],
+          displayOrder: row.sort_order || idx + 1,
+        }));
+        newSettings.shipping = {
+          ...newSettings.shipping,
+          additionalFees: mappedFees,
+        };
+        hasUpdates = true;
+      }
+
+      // 4. Sync payment_methods
+      const { data: paymentData, error: paymentError } = await client.from('payment_methods').select('*').order('sort_order');
+      if (!paymentError && paymentData && paymentData.length > 0) {
+        const mappedPayments: ConfigurablePaymentMethod[] = paymentData.map((row: any, idx: number) => ({
+          id: row.id,
+          methodType: (row.method_type || 'E_WALLET') as PaymentMethodType,
+          displayName: row.name,
+          subtitle: (row.method_type || '').replaceAll('_', ' '),
+          description: row.instructions || '',
+          enabled: Boolean(row.is_enabled),
+          sortOrder: row.sort_order || idx + 1,
+          accountName: row.account_name || '',
+          accountNumber: row.account_number || row.wallet_address || '',
+          qrCodeUrl: row.qr_code_storage_path || undefined,
+          instructions: row.instructions || '',
+          accent: (['cyan', 'purple', 'magenta', 'green'] as const)[idx % 4],
+          badge: row.method_type || 'INSTANT',
+          requiresProof: (row.settings_jsonb as any)?.requires_proof !== false,
+          availableStores: row.available_stores || ['all'],
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        }));
+        newSettings.payments = {
+          ...newSettings.payments,
+          methods: mappedPayments,
+        };
+        hasUpdates = true;
+      }
+
+      // 5. Sync system_settings (global categories)
+      const { data: sysData, error: sysError } = await client.from('system_settings').select('*');
+      if (!sysError && sysData && sysData.length > 0) {
+        sysData.forEach((row: any) => {
+          const key = row.setting_key as keyof SystemSettings;
+          if (key && row.setting_value && typeof row.setting_value === 'object') {
+            (newSettings as any)[key] = {
+              ...(newSettings as any)[key],
+              ...row.setting_value,
+            };
+            hasUpdates = true;
           }
-        }
+        });
+      }
+
+      if (hasUpdates) {
+        this.cachedSettings = newSettings;
+        this.saveToStorage(newSettings);
+        this.notifyListeners(newSettings);
       }
     } catch (err) {
       console.error('[SystemSettingsService] Exception during syncFromSupabase:', err);
@@ -126,16 +216,6 @@ class SystemSettingsService {
     if (!client) return;
 
     try {
-      const { data: { session } } = await client.auth.getSession();
-      if (!session?.user?.id) {
-        // Database security policies (RLS) require an authenticated admin/owner Supabase Auth session to write store configs.
-        // When running under development mode bypass or unauthenticated client, skip remote writes and maintain local state.
-        console.info(`[SystemSettingsService] Skipping Supabase store_config write for ${storeType}: A real authenticated Supabase Auth session (admin/owner) is required by RLS.`);
-        return;
-      }
-
-      const updatedBy = session.user.id;
-
       const payload = {
         store_type: storeType,
         display_name: config.name || `${storeType.toUpperCase()} Store`,
@@ -143,7 +223,6 @@ class SystemSettingsService {
         schedule_enabled: Boolean(config.availability?.openCloseControlEnabled ?? true),
         schedule_config_jsonb: config as unknown as Json,
         updated_at: new Date().toISOString(),
-        updated_by: updatedBy,
       };
 
       const { error } = await client
@@ -151,14 +230,170 @@ class SystemSettingsService {
         .upsert(payload, { onConflict: 'store_type' });
 
       if (error) {
-        if (error.code === '42501') {
-          console.warn(`[SystemSettingsService] RLS policy blocked saving store_config for ${storeType}: User ${updatedBy} must have an authorized admin/owner profile role in Supabase.`);
-        } else {
-          console.error(`[SystemSettingsService] Error saving store_config for ${storeType}:`, error);
-        }
+        console.warn(`[SystemSettingsService] Notice saving store_config for ${storeType}:`, error.message);
       }
     } catch (err) {
       console.error(`[SystemSettingsService] Failed to save store_config for ${storeType}:`, err);
+    }
+  }
+
+  /**
+   * Asynchronously upsert shipping methods to Supabase shipping_methods table
+   */
+  private async saveShippingMethodsToSupabase(methods: ConfigurableShippingMethod[]): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+      for (const method of methods) {
+        const payload: any = {
+          name: method.name,
+          method_type: (method as any).methodType || 'STANDARD',
+          base_fee_php: method.baseFee || 0,
+          base_included_qty: method.baseIncludedQty || 0,
+          additional_per_vial_fee_php: method.additionalPerVialFee || 0,
+          available_stores: method.availableStores || ['all'],
+          regional_rates_jsonb: method.regionalRates || [],
+          is_enabled: method.enabled ?? true,
+          sort_order: method.displayOrder || 1,
+          settings_jsonb: { description: method.description },
+          updated_at: new Date().toISOString(),
+        };
+
+        if (method.id && method.id.includes('-') && method.id.length >= 30) {
+          payload.id = method.id;
+        }
+
+        const { error } = await client.from('shipping_methods').upsert(payload);
+        if (error) {
+          console.warn('[SystemSettingsService] Notice saving shipping_method:', error.message);
+        }
+      }
+    } catch (err) {
+      console.error('[SystemSettingsService] Failed to save shipping methods to Supabase:', err);
+    }
+  }
+
+  /**
+   * Asynchronously upsert additional fees to Supabase additional_fees table
+   */
+  private async saveAdditionalFeesToSupabase(fees: ConfigurableAdditionalFee[]): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+      for (const fee of fees) {
+        const payload: any = {
+          name: fee.displayName || fee.name,
+          description: fee.description || null,
+          fee_type: (fee.calculationType || 'FIXED').toUpperCase(),
+          amount_php: fee.amount || 0,
+          available_stores: fee.availableStores || ['all'],
+          is_enabled: fee.enabled ?? true,
+          sort_order: fee.displayOrder || 1,
+          settings_jsonb: {},
+          updated_at: new Date().toISOString(),
+        };
+
+        if (fee.id && fee.id.includes('-') && fee.id.length >= 30) {
+          payload.id = fee.id;
+        }
+
+        const { error } = await client.from('additional_fees').upsert(payload);
+        if (error) {
+          console.warn('[SystemSettingsService] Notice saving additional_fee:', error.message);
+        }
+      }
+    } catch (err) {
+      console.error('[SystemSettingsService] Failed to save additional fees to Supabase:', err);
+    }
+  }
+
+  /**
+   * Asynchronously upsert payment methods to Supabase payment_methods table
+   */
+  private async savePaymentMethodsToSupabase(methods: ConfigurablePaymentMethod[]): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+      for (const method of methods) {
+        const payload: any = {
+          name: method.displayName,
+          method_type: method.methodType || 'E_WALLET',
+          account_name: method.accountName || null,
+          account_number: method.accountNumber || null,
+          wallet_address: method.methodType === 'CRYPTOCURRENCY' ? method.accountNumber || null : null,
+          qr_code_storage_path: method.qrCodeUrl || null,
+          instructions: method.instructions || null,
+          available_stores: method.availableStores || ['all'],
+          is_enabled: method.enabled ?? true,
+          sort_order: method.sortOrder || 1,
+          settings_jsonb: {
+            bank_or_network: method.bankName || method.network || method.providerBrand || undefined,
+            requires_proof: method.requiresProof !== false,
+          },
+          updated_at: new Date().toISOString(),
+        };
+
+        if (method.id && method.id.includes('-') && method.id.length >= 30) {
+          payload.id = method.id;
+        }
+
+        const { error } = await client.from('payment_methods').upsert(payload);
+        if (error) {
+          console.warn('[SystemSettingsService] Notice saving payment_method:', error.message);
+        }
+      }
+    } catch (err) {
+      console.error('[SystemSettingsService] Failed to save payment methods to Supabase:', err);
+    }
+  }
+
+  /**
+   * Asynchronously upsert global system settings categories to Supabase system_settings table
+   */
+  private async saveSystemSettingsToSupabase(updates: Partial<SystemSettings>): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const globalKeys: Array<keyof SystemSettings> = [
+      'general',
+      'orders',
+      'notifications',
+      'security',
+      'systemConfig',
+      'deployment',
+      'adminVisibility',
+      'owner',
+      'customerTiers',
+    ];
+
+    try {
+      for (const key of globalKeys) {
+        if (updates[key]) {
+          const payload = {
+            setting_key: key,
+            setting_value: updates[key] as unknown as Json,
+            category: 'global',
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error } = await client
+            .from('system_settings')
+            .upsert(payload, { onConflict: 'setting_key' });
+
+          if (error) {
+            console.warn(`[SystemSettingsService] Notice saving system_setting for ${key}:`, error.message);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[SystemSettingsService] Failed to save system settings to Supabase:', err);
     }
   }
 
@@ -225,14 +460,30 @@ class SystemSettingsService {
     this.saveToStorage(updated);
     this.notifyListeners(updated);
 
-    // If store configs were updated, persist ONLY those modified store records to Supabase store_configs table
-    if (updates.stores && isSupabaseConfigured) {
-      const storeKeys = Object.keys(updates.stores) as Array<'groupbuy' | 'onhand' | 'moq'>;
-      storeKeys.forEach((storeKey) => {
-        if (['groupbuy', 'onhand', 'moq'].includes(storeKey) && updated.stores[storeKey]) {
-          this.saveStoreConfigToSupabase(storeKey, updated.stores[storeKey]);
-        }
-      });
+    // Persist to dedicated Supabase tables asynchronously
+    if (isSupabaseConfigured) {
+      if (updates.stores) {
+        const storeKeys = Object.keys(updates.stores) as Array<'groupbuy' | 'onhand' | 'moq'>;
+        storeKeys.forEach((storeKey) => {
+          if (['groupbuy', 'onhand', 'moq'].includes(storeKey) && updated.stores[storeKey]) {
+            this.saveStoreConfigToSupabase(storeKey, updated.stores[storeKey]);
+          }
+        });
+      }
+
+      if (updates.shipping?.methods) {
+        this.saveShippingMethodsToSupabase(updated.shipping.methods);
+      }
+
+      if (updates.shipping?.additionalFees) {
+        this.saveAdditionalFeesToSupabase(updated.shipping.additionalFees);
+      }
+
+      if (updates.payments?.methods) {
+        this.savePaymentMethodsToSupabase(updated.payments.methods);
+      }
+
+      this.saveSystemSettingsToSupabase(updates);
     }
 
     return updated;
@@ -380,6 +631,7 @@ class SystemSettingsService {
   }
 
   private saveToStorage(settings: SystemSettings): void {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     } catch (e) {

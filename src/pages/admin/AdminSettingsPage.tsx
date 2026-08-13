@@ -391,11 +391,7 @@ export const AdminSettingsPage: React.FC = () => {
 
         {activeTab === 'deployment' && (
           <DeploymentAndAdvancedTab
-            systemConfig={settings.systemConfig}
             deployment={settings.deployment}
-            notifications={settings.notifications}
-            onUpdateSystemConfig={(updated) => handleUpdate({ ...settings, systemConfig: updated })}
-            onUpdateNotifications={(updated) => handleUpdate({ ...settings, notifications: updated })}
             subTabParam={activeSubParam}
           />
         )}

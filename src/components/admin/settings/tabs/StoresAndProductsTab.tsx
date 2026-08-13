@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { StoreSettings, OrderSettings } from '../../../../types/systemSettings';
 import { StoreSettingsTab } from './StoreSettingsTab';
 import { ProductAddonsSettingsTab } from './ProductAddonsSettingsTab';
-import { CustomerTiersSettingsTab } from './CustomerTiersSettingsTab';
-import { ShoppingBag, Link2, Crown } from 'lucide-react';
+import { ShoppingBag, Link2 } from 'lucide-react';
 
 interface StoresAndProductsTabProps {
   settings: StoreSettings;
@@ -20,9 +19,8 @@ export const StoresAndProductsTab: React.FC<StoresAndProductsTabProps> = ({
   onChangeOrders,
   subTabParam,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'instances' | 'addons' | 'tiers'>(() => {
+  const [activeSubTab, setActiveSubTab] = useState<'instances' | 'addons'>(() => {
     if (subTabParam === 'productAddons') return 'addons';
-    if (subTabParam === 'customerTiers') return 'tiers';
     return 'instances';
   });
 
@@ -53,20 +51,7 @@ export const StoresAndProductsTab: React.FC<StoresAndProductsTabProps> = ({
           }`}
         >
           <Link2 size={14} />
-          <span>Product Add-ons & Bundles</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('tiers')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer whitespace-nowrap ${
-            activeSubTab === 'tiers'
-              ? 'bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/40 shadow-[0_0_10px_rgba(0,217,255,0.2)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Crown size={14} />
-          <span>Customer Tiers & Bulk Discounts</span>
+          <span>Product Add-ons & Supply Relationships</span>
         </button>
       </div>
 
@@ -83,10 +68,7 @@ export const StoresAndProductsTab: React.FC<StoresAndProductsTabProps> = ({
       {activeSubTab === 'addons' && (
         <ProductAddonsSettingsTab />
       )}
-
-      {activeSubTab === 'tiers' && (
-        <CustomerTiersSettingsTab />
-      )}
     </div>
   );
 };
+

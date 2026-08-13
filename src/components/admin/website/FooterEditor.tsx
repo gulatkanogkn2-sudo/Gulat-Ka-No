@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Layout, Mail, Phone, MapPin, Share2, Plus, Trash2, Globe, Eye, EyeOff } from 'lucide-react';
+import { Layout, Mail, Phone, MapPin, Share2, Plus, Trash2, Globe, Eye, EyeOff, Save, CheckCircle2 } from 'lucide-react';
 import { FooterSettings, SocialLinkItem, FooterLinkColumn } from '../../../types/websiteManager';
 import { MediaInput } from './MediaAssetPickerModal';
+import { WebsiteManagerService } from '../../../services/websiteManagerService';
 
 interface FooterEditorProps {
   footer: FooterSettings;
@@ -10,6 +11,22 @@ interface FooterEditorProps {
 
 export const FooterEditor: React.FC<FooterEditorProps> = ({ footer, onChange }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'socials' | 'columns'>('info');
+  const [savedToast, setSavedToast] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await WebsiteManagerService.updateFooter(footer);
+      await WebsiteManagerService.publishConfig();
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    } catch (e) {
+      console.error('Failed to save footer config:', e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleSocialChange = (index: number, updated: Partial<SocialLinkItem>) => {
     const next = [...footer.socialLinks];
@@ -78,37 +95,48 @@ export const FooterEditor: React.FC<FooterEditorProps> = ({ footer, onChange }) 
           </p>
         </div>
 
-        {/* Sub-tabs */}
-        <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1">
+        {/* Sub-tabs and Save Button */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeTab === 'info'
+                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Contact & Copyright
+            </button>
+            <button
+              onClick={() => setActiveTab('socials')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeTab === 'socials'
+                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Social Links ({footer.socialLinks.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('columns')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeTab === 'columns'
+                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Link Columns ({footer.linkColumns.length})
+            </button>
+          </div>
+
           <button
-            onClick={() => setActiveTab('info')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              activeTab === 'info'
-                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-5 py-2.5 bg-[#00D9FF] hover:bg-[#00D9FF]/90 text-black font-extrabold rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(0,217,255,0.3)] flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
           >
-            Contact & Copyright
-          </button>
-          <button
-            onClick={() => setActiveTab('socials')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              activeTab === 'socials'
-                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Social Links ({footer.socialLinks.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('columns')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              activeTab === 'columns'
-                ? 'bg-cyan-950 text-cyan-300 border border-cyan-800'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Link Columns ({footer.linkColumns.length})
+            <Save className="w-4 h-4" /> {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
           </button>
         </div>
       </div>

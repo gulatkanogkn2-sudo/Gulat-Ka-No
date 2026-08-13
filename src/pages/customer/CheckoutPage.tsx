@@ -87,11 +87,15 @@ export const CheckoutPage: React.FC = () => {
   const configuredShippingPhp = shippingMethods[0]
     ? Number(shippingMethods[0].base_fee_php) + Math.max(0, baseBreakdown.totalVialsCount - Number(shippingMethods[0].base_included_qty)) * Number(shippingMethods[0].additional_per_vial_fee_php)
     : 0;
-  const configuredFeesPhp = additionalFees.reduce((sum, fee) => sum + (fee.fee_type === 'PERCENTAGE' ? (baseBreakdown.subtotalPhp || 0) * Number(fee.amount_php) / 100 : Number(fee.amount_php)), 0);
+  const configuredFeesPhp = additionalFees.reduce((sum, fee) => {
+    const feeVal = Number(fee.amount ?? fee.amount_php ?? 0);
+    return sum + (fee.fee_type === 'PERCENTAGE' ? (baseBreakdown.subtotalPhp || 0) * feeVal / 100 : feeVal);
+  }, 0);
   const configuredAppliedFees = additionalFees.map((fee) => {
+    const feeVal = Number(fee.amount ?? fee.amount_php ?? 0);
     const amountPhp = fee.fee_type === 'PERCENTAGE'
-      ? (baseBreakdown.subtotalPhp || 0) * Number(fee.amount_php) / 100
-      : Number(fee.amount_php);
+      ? (baseBreakdown.subtotalPhp || 0) * feeVal / 100
+      : feeVal;
     return {
       feeId: fee.id,
       displayName: fee.name,

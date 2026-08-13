@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  SystemConfig,
   DeploymentSettings,
-  NotificationSettings,
 } from '../../../../types/systemSettings';
 import {
   HealthCheckResult,
@@ -16,9 +14,7 @@ import {
 import { initialSetupService } from '../../../../services/initialSetupService';
 
 // Sub-components
-import { SystemConfigTab } from './SystemConfigTab';
 import { DeploymentSettingsTab } from './DeploymentSettingsTab';
-import { NotificationSettingsTab } from './NotificationSettingsTab';
 import { FirstAdminSetupWizard } from '../../setup/FirstAdminSetupWizard';
 import { SupabaseStatusCards } from '../../setup/SupabaseStatusCards';
 import { DatabaseHealthCheckCard } from '../../setup/DatabaseHealthCheckCard';
@@ -29,40 +25,27 @@ import { SystemValidationReportModal } from '../../setup/SystemValidationReportM
 
 // Icons
 import {
-  Cpu,
   Cloud,
-  Bell,
   Shield,
   Play,
   FileText,
   RefreshCw,
   Crown,
   Database,
-  Layers,
-  CheckCircle,
 } from 'lucide-react';
 
 interface DeploymentAndAdvancedTabProps {
-  systemConfig: SystemConfig;
   deployment: DeploymentSettings;
-  notifications: NotificationSettings;
-  onUpdateSystemConfig: (updated: SystemConfig) => void;
-  onUpdateNotifications: (updated: NotificationSettings) => void;
   subTabParam?: string;
 }
 
 export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> = ({
-  systemConfig,
   deployment,
-  notifications,
-  onUpdateSystemConfig,
-  onUpdateNotifications,
   subTabParam,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<
-    'deployment' | 'infrastructure' | 'setup' | 'notifications'
+    'deployment' | 'infrastructure' | 'setup'
   >(() => {
-    if (subTabParam === 'notifications') return 'notifications';
     if (subTabParam === 'setup') return 'setup';
     if (subTabParam === 'infrastructure') return 'infrastructure';
     return 'deployment';
@@ -201,7 +184,7 @@ export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> =
           }`}
         >
           <Cloud size={14} />
-          <span>Deployment & Build Checklist</span>
+          <span>Deployment & Build Metadata</span>
         </button>
 
         <button
@@ -227,20 +210,7 @@ export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> =
           }`}
         >
           <Shield size={14} />
-          <span>Security & Data Seeding</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('notifications')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer whitespace-nowrap ${
-            activeSubTab === 'notifications'
-              ? 'bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/40 shadow-[0_0_10px_rgba(0,217,255,0.2)]'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Bell size={14} />
-          <span>Notifications & Alert Routing</span>
+          <span>Security & Role Access</span>
         </button>
       </div>
 
@@ -267,7 +237,6 @@ export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> =
             onRefresh={loadDiagnostics}
             isLoading={isLoadingDiagnostics}
           />
-          <SystemConfigTab settings={systemConfig} onChange={onUpdateSystemConfig} />
         </div>
       )}
 
@@ -287,7 +256,7 @@ export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> =
                 <span>Super Admin & Role Hierarchy Architecture</span>
               </h3>
               <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Five-tier role hierarchy prepared for multi-staff administration and permission assignment
+                Database-backed role hierarchy enforced by Supabase Auth and protected route guards.
               </p>
             </div>
 
@@ -309,7 +278,6 @@ export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> =
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono">Assigned: {r.userCount} Accounts</span>
                   </div>
 
                   <p className="text-xs text-slate-300">{r.description}</p>
@@ -329,11 +297,6 @@ export const DeploymentAndAdvancedTab: React.FC<DeploymentAndAdvancedTabProps> =
             </div>
           </div>
         </div>
-      )}
-
-      {/* SubTab 4: Notifications */}
-      {activeSubTab === 'notifications' && (
-        <NotificationSettingsTab settings={notifications} onChange={onUpdateNotifications} />
       )}
     </div>
   );

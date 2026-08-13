@@ -11,8 +11,11 @@ import {
   FooterSettings,
   SEOSettings,
 } from '../types/websiteManager';
+import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { Json } from '../types/supabase';
 
 const STORAGE_KEY = 'gkn_website_manager_config_v2';
+const SETTING_KEY = 'website_config';
 
 export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
   branding: {
@@ -217,43 +220,213 @@ const notifyListeners = (config: WebsiteConfig) => {
 
 export class WebsiteManagerService {
   private static currentConfig: WebsiteConfig | null = null;
+  private static isSupabaseSyncing = false;
+  private static isSupabaseInitialized = false;
+  private static syncPromise: Promise<void> | null = null;
 
   /**
-   * Get current website configuration (from cache or defaults)
+   * Returns whether Supabase remote configuration has been resolved at least once
+   */
+  public static isConfigInitialized(): boolean {
+    return this.isSupabaseInitialized;
+  }
+
+  /**
+   * Deep merge incoming partial or parsed config with DEFAULT_WEBSITE_CONFIG
+   */
+  private static mergeWithDefaults(saved: Partial<WebsiteConfig>): WebsiteConfig {
+    return {
+      ...DEFAULT_WEBSITE_CONFIG,
+      ...saved,
+      branding: {
+        ...DEFAULT_WEBSITE_CONFIG.branding,
+        ...(saved.branding || {}),
+      },
+      hero: {
+        ...DEFAULT_WEBSITE_CONFIG.hero,
+        ...(saved.hero || {}),
+      },
+      announcement: {
+        ...DEFAULT_WEBSITE_CONFIG.announcement,
+        ...(saved.announcement || {}),
+      },
+      storeCards: Array.isArray(saved.storeCards) && saved.storeCards.length > 0
+        ? saved.storeCards
+        : DEFAULT_WEBSITE_CONFIG.storeCards,
+      homepageCards: Array.isArray(saved.homepageCards) && saved.homepageCards.length > 0
+        ? saved.homepageCards
+        : DEFAULT_WEBSITE_CONFIG.homepageCards,
+      researchHub: {
+        ...DEFAULT_WEBSITE_CONFIG.researchHub,
+        ...(saved.researchHub || {}),
+      },
+      navigation: {
+        ...DEFAULT_WEBSITE_CONFIG.navigation,
+        ...(saved.navigation || {}),
+      },
+      footer: {
+        ...DEFAULT_WEBSITE_CONFIG.footer,
+        ...(saved.footer || {}),
+      },
+      seo: {
+        ...DEFAULT_WEBSITE_CONFIG.seo,
+        ...(saved.seo || {}),
+      },
+    };
+  }
+
+  /**
+   * Get current website configuration (from cache, Supabase, or defaults)
    */
   public static async getWebsiteConfig(): Promise<WebsiteConfig> {
-    if (this.currentConfig) {
-      return { ...this.currentConfig };
-    }
+    if (!this.currentConfig) {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          this.currentConfig = this.mergeWithDefaults(parsed);
+        }
+      } catch (e) {
+        console.warn('[WebsiteManagerService] Failed to parse saved localStorage config:', e);
+      }
 
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        this.currentConfig = { ...DEFAULT_WEBSITE_CONFIG, ...parsed };
-      } else {
+      if (!this.currentConfig) {
         this.currentConfig = { ...DEFAULT_WEBSITE_CONFIG };
       }
-    } catch (e) {
-      console.warn('Failed to parse saved website manager config:', e);
-      this.currentConfig = { ...DEFAULT_WEBSITE_CONFIG };
+    }
+
+    if (isSupabaseConfigured && !this.isSupabaseInitialized) {
+      await this.syncFromSupabase();
     }
 
     return { ...this.currentConfig! };
   }
 
   /**
-   * Internal draft save & update listener caller
+   * Sync website configuration from Supabase system_settings where setting_key = 'website_config'
+   */
+  public static async syncFromSupabase(): Promise<void> {
+    if (!isSupabaseConfigured) {
+      this.isSupabaseInitialized = true;
+      return;
+    }
+
+    if (this.syncPromise) {
+      return this.syncPromise;
+    }
+
+    const client = getSupabaseClient();
+    if (!client) {
+      this.isSupabaseInitialized = true;
+      return;
+    }
+
+    this.isSupabaseSyncing = true;
+    this.syncPromise = (async () => {
+      try {
+        const { data, error } = await client
+          .from('system_settings')
+          .select('setting_value')
+          .eq('setting_key', SETTING_KEY)
+          .maybeSingle();
+
+        if (error) {
+          console.error('[WebsiteManagerService] Error fetching website_config from Supabase:', error);
+          this.isSupabaseInitialized = true;
+          return;
+        }
+
+        if (data && data.setting_value !== undefined && data.setting_value !== null) {
+          let remoteConfig: Partial<WebsiteConfig> | null = null;
+          if (typeof data.setting_value === 'string') {
+            try {
+              remoteConfig = JSON.parse(data.setting_value);
+            } catch (jsonErr) {
+              console.warn('[WebsiteManagerService] Failed to parse setting_value JSON string:', jsonErr);
+            }
+          } else if (typeof data.setting_value === 'object') {
+            remoteConfig = data.setting_value as unknown as Partial<WebsiteConfig>;
+          }
+
+          if (remoteConfig) {
+            this.currentConfig = this.mergeWithDefaults(remoteConfig);
+            this.isSupabaseInitialized = true;
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(this.currentConfig));
+            } catch (e) {
+              console.error('[WebsiteManagerService] LocalStorage cache write error:', e);
+            }
+            notifyListeners({ ...this.currentConfig });
+          } else {
+            this.isSupabaseInitialized = true;
+          }
+        } else {
+          // Table row not found; initialize Supabase system_settings with default/current config
+          this.isSupabaseInitialized = true;
+          const configToPersist = this.currentConfig || DEFAULT_WEBSITE_CONFIG;
+          await client
+            .from('system_settings')
+            .upsert(
+              {
+                setting_key: SETTING_KEY,
+                setting_value: configToPersist as unknown as Json,
+                description: 'Global Website Manager configuration and branding assets',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'setting_key' }
+            );
+        }
+      } catch (e) {
+        console.error('[WebsiteManagerService] syncFromSupabase exception:', e);
+        this.isSupabaseInitialized = true;
+      } finally {
+        this.isSupabaseSyncing = false;
+        this.syncPromise = null;
+      }
+    })();
+
+    return this.syncPromise;
+  }
+
+  /**
+   * Internal draft save & update listener caller (writes to Supabase + localStorage cache)
    */
   private static async saveConfig(updated: WebsiteConfig): Promise<WebsiteConfig> {
     updated.lastModifiedAt = new Date().toISOString();
     updated.draftVersion += 1;
     this.currentConfig = updated;
 
+    // Cache locally for instant offline/initial rendering
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch (e) {
-      console.error('LocalStorage write error in WebsiteManagerService:', e);
+      console.error('[WebsiteManagerService] LocalStorage write error:', e);
+    }
+
+    // Persist to Supabase system_settings
+    if (isSupabaseConfigured) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { error } = await client
+            .from('system_settings')
+            .upsert(
+              {
+                setting_key: SETTING_KEY,
+                setting_value: updated as unknown as Json,
+                description: 'Global Website Manager configuration and branding assets',
+                updated_at: updated.lastModifiedAt,
+              },
+              { onConflict: 'setting_key' }
+            );
+
+          if (error) {
+            console.error('[WebsiteManagerService] Supabase system_settings upsert error:', error);
+          }
+        } catch (dbErr) {
+          console.error('[WebsiteManagerService] Supabase save error:', dbErr);
+        }
+      }
     }
 
     notifyListeners({ ...updated });
@@ -349,6 +522,28 @@ export class WebsiteManagerService {
     } catch (e) {
       console.error(e);
     }
+
+    if (isSupabaseConfigured) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          await client
+            .from('system_settings')
+            .upsert(
+              {
+                setting_key: SETTING_KEY,
+                setting_value: this.currentConfig as unknown as Json,
+                description: 'Global Website Manager configuration and branding assets',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'setting_key' }
+            );
+        } catch (dbErr) {
+          console.error('[WebsiteManagerService] Supabase reset error:', dbErr);
+        }
+      }
+    }
+
     notifyListeners({ ...this.currentConfig });
     return { ...this.currentConfig };
   }

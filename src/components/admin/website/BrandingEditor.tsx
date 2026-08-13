@@ -151,16 +151,14 @@ export const BrandingEditor: React.FC<BrandingEditorProps> = ({ branding, onChan
               description="Compact logo asset for mobile screens."
             />
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 block">Favicon Asset Path</label>
-              <input
-                type="text"
-                value={branding.favicon}
-                onChange={(e) => onChange({ favicon: e.target.value })}
-                placeholder="/favicon.ico"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2 text-xs font-mono text-cyan-300 focus:outline-none"
-              />
-            </div>
+            <MediaInput
+              label="Browser Favicon & Touch Icon"
+              value={branding.favicon}
+              onChange={(url) => onChange({ favicon: url })}
+              uploadButtonText="Upload Favicon"
+              accept="image/x-icon,image/svg+xml,image/png,image/*"
+              description="Browser tab icon (.ico, .png, .svg) and mobile home screen touch icon."
+            />
           </div>
         </div>
       </div>

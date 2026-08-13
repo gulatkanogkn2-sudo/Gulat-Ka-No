@@ -229,6 +229,7 @@ export interface ConfigurableAdditionalFee {
   calculationType: FeeCalculationType;
   amount: number; // fixed PHP or percentage
   availableStores: Array<'groupbuy' | 'onhand' | 'moq' | 'all'>;
+  displayOrder?: number;
   tieredRules?: QuantityTierRule[];
   baseIncludedQty?: number;
   additionalPerVialFee?: number;

@@ -33,33 +33,33 @@ export async function loadProductionCheckoutConfig(store: string): Promise<Produ
     if (result.error) throw result.error;
   }
   return {
-    paymentMethods: (payments.data || []).filter((row: any) => storeMatches(row.available_stores, store)).map((row: any, index) => ({
+    paymentMethods: (payments.data || []).filter((row: any) => storeMatches(row.available_stores, store)).map((row: any, index: number) => ({
       id: row.id,
       name: row.name,
-      subtitle: row.method_type.replaceAll('_', ' '),
-      badge: row.method_type,
+      subtitle: (row.method_type || '').replaceAll('_', ' '),
+      badge: row.method_type || 'PAYMENT',
       accountName: row.account_name || '',
       accountNumber: row.account_number || row.wallet_address || '',
-      bankOrNetwork: row.settings_jsonb?.bank_or_network,
+      bankOrNetwork: row.settings_jsonb?.bank_or_network || (row.method_type === 'E_WALLET' ? `${row.name} Wallet` : undefined),
       instructions: row.instructions || '',
       accent: ['cyan', 'purple', 'magenta', 'green'][index % 4] as PaymentMethodOption['accent'],
       requiresProof: row.settings_jsonb?.requires_proof !== false,
       qrCodeUrl: row.qr_code_storage_path || undefined,
-      enabled: true,
-      displayOrder: row.sort_order,
-      availableStores: row.available_stores,
+      enabled: row.is_enabled ?? true,
+      displayOrder: row.sort_order || index + 1,
+      availableStores: row.available_stores || ['all'],
     })),
     shippingMethods: (shipping.data || []).filter((row: any) => storeMatches(row.available_stores, store)),
-    accessories: (accessories.data || []).filter((row: any) => storeMatches(row.available_stores, store)).map((row: any) => ({
+    accessories: (accessories.data || []).filter((row: any) => storeMatches(row.available_stores, store)).map((row: any, index: number) => ({
       id: row.id,
       name: row.name,
       description: row.description || '',
-      priceUsd: convertPhpToUsd(Number(row.price_php)),
-      enabled: true,
-      displayOrder: row.sort_order,
-      availableStores: row.available_stores,
-      calculationMode: row.calculation_mode.toLowerCase(),
-      multiplier: Number(row.multiplier),
+      priceUsd: convertPhpToUsd(Number(row.price_php || 0)),
+      enabled: row.is_enabled ?? true,
+      displayOrder: row.sort_order || index + 1,
+      availableStores: row.available_stores || ['all'],
+      calculationMode: (row.calculation_mode || 'manual').toLowerCase(),
+      multiplier: Number(row.multiplier || 1),
     })),
     additionalFees: (fees.data || []).filter((row: any) => storeMatches(row.available_stores, store)),
     addresses: (addresses.data || []).map((row: any) => ({
@@ -121,7 +121,10 @@ export async function createProductionOrder(payload: any, proofFile: File | null
   const subtotalPhp = convertUsdToPhp(payload.subtotal);
   const discountPhp = convertUsdToPhp(payload.discount);
   const accessoriesPhp = (payload.selectedAccessories || []).reduce((sum: number, item: any) => sum + convertUsdToPhp(item.totalPriceUsd), 0);
-  const additionalFeesPhp = config.additionalFees.reduce((sum: number, fee: any) => sum + (fee.fee_type === 'PERCENTAGE' ? subtotalPhp * Number(fee.amount_php) / 100 : Number(fee.amount_php)), 0);
+  const additionalFeesPhp = config.additionalFees.reduce((sum: number, fee: any) => {
+    const feeVal = Number(fee.amount ?? fee.amount_php ?? 0);
+    return sum + (fee.fee_type === 'PERCENTAGE' ? subtotalPhp * feeVal / 100 : feeVal);
+  }, 0);
   const totalVials = payload.items.reduce((sum: number, item: any) => sum + item.quantity * (item.sellingUnit === 'kit' ? item.vialsPerKit || 10 : 1), 0);
   const shippingFeePhp = Number(shipping.base_fee_php) + Math.max(0, totalVials - Number(shipping.base_included_qty)) * Number(shipping.additional_per_vial_fee_php);
   const grandTotalPhp = Math.max(0, subtotalPhp + shippingFeePhp + accessoriesPhp + additionalFeesPhp - discountPhp);

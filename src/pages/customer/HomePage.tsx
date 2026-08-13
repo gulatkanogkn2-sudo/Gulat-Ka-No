@@ -22,41 +22,67 @@ import { WebsiteConfig } from '../../types/websiteManager';
 
 export const HomePage: React.FC = () => {
   const [cmsConfig, setCmsConfig] = useState<WebsiteConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(!WebsiteManagerService.isConfigInitialized());
 
   // Load CMS configuration for dynamic home banner if updated by admin
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
+    let isMounted = true;
+
     WebsiteManagerService.getWebsiteConfig().then((data) => {
-      setCmsConfig(data);
+      if (isMounted) {
+        setCmsConfig(data);
+        setIsLoadingConfig(false);
+      }
     });
 
     unsubscribe = WebsiteManagerService.subscribeToConfigUpdates((updated) => {
-      setCmsConfig(updated);
+      if (isMounted) {
+        setCmsConfig(updated);
+        setIsLoadingConfig(false);
+      }
     });
 
     return () => {
+      isMounted = false;
       if (unsubscribe) unsubscribe();
     };
   }, []);
 
   const bannerImage = cmsConfig?.hero?.heroImage || BRANDING_ASSETS.heroArtwork;
 
+  const groupbuyCardImage =
+    cmsConfig?.storeCards?.find((c) => c.storeKey === 'groupbuy')?.image || BRANDING_ASSETS.groupbuy;
+  const onhandCardImage =
+    cmsConfig?.storeCards?.find((c) => c.storeKey === 'onhand')?.image || BRANDING_ASSETS.onhand;
+  const moqCardImage =
+    cmsConfig?.storeCards?.find((c) => c.storeKey === 'moq')?.image || BRANDING_ASSETS.moq;
+
   return (
     <div className="relative w-full overflow-hidden">
       <ResponsiveContainer className="py-8 relative z-10">
         {/* ONE CLEAN LANDSCAPE HOME BANNER */}
-        <div className="mb-12">
-          <div className="relative w-full rounded-2xl overflow-hidden border border-[#00D9FF]/30 shadow-[0_0_35px_rgba(0,217,255,0.2)] bg-gradient-to-r from-[#050810] via-[#0B132B] to-[#050810] flex items-center justify-center min-h-[140px] p-1 sm:p-2 group">
-            <SafeImage
-              src={bannerImage}
-              alt="GKN Research Lab Promotional Banner"
-              fallbackSrc={BRANDING_ASSETS.logo}
-              className="w-full h-auto max-h-[550px] object-contain rounded-xl block transition-transform duration-500 group-hover:scale-[1.005]"
-            />
-            {/* Subtle Vignette Overlay for GKN Dark Luxury Aesthetic */}
-            <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
+        {isLoadingConfig ? (
+          <div className="mb-12">
+            <div className="relative w-full rounded-2xl overflow-hidden border border-[#00D9FF]/20 shadow-[0_0_25px_rgba(0,217,255,0.1)] bg-gradient-to-r from-[#050810] via-[#0B132B] to-[#050810] flex items-center justify-center min-h-[140px] sm:min-h-[220px] p-2 animate-pulse">
+              <div className="w-10 h-10 rounded-full border-2 border-[#00D9FF]/30 border-t-[#00D9FF] animate-spin opacity-50" />
+              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
+            </div>
           </div>
-        </div>
+        ) : cmsConfig?.hero?.isVisible !== false ? (
+          <div className="mb-12">
+            <div className="relative w-full rounded-2xl overflow-hidden border border-[#00D9FF]/30 shadow-[0_0_35px_rgba(0,217,255,0.2)] bg-gradient-to-r from-[#050810] via-[#0B132B] to-[#050810] flex items-center justify-center min-h-[140px] p-1 sm:p-2 group">
+              <SafeImage
+                src={bannerImage}
+                alt="GKN Research Lab Promotional Banner"
+                fallbackSrc={BRANDING_ASSETS.logo}
+                className="w-full h-auto max-h-[550px] object-contain rounded-xl block transition-transform duration-500 group-hover:scale-[1.005]"
+              />
+              {/* Subtle Vignette Overlay for GKN Dark Luxury Aesthetic */}
+              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
+            </div>
+          </div>
+        ) : null}
 
         {/* CHOOSE YOUR STORE SECTION HEADER */}
         <div className="mb-8 text-center space-y-2">
@@ -87,7 +113,7 @@ export const HomePage: React.FC = () => {
               {/* Background Art & Vignette */}
               <div className="absolute inset-0 z-0 opacity-60 transition-transform duration-700 group-hover:scale-105 group-hover:opacity-85 pointer-events-none">
                 <SafeImage
-                  src={BRANDING_ASSETS.groupbuy}
+                  src={groupbuyCardImage}
                   alt="GroupBuy Pre-Order Store"
                   fallbackSrc={BRANDING_ASSETS.logo}
                   className="w-full h-full object-cover object-right"
@@ -167,7 +193,7 @@ export const HomePage: React.FC = () => {
               {/* Background Art & Vignette */}
               <div className="absolute inset-0 z-0 opacity-60 transition-transform duration-700 group-hover:scale-105 group-hover:opacity-85 pointer-events-none">
                 <SafeImage
-                  src={BRANDING_ASSETS.onhand}
+                  src={onhandCardImage}
                   alt="OnHand In-Stock Store"
                   fallbackSrc={BRANDING_ASSETS.logo}
                   className="w-full h-full object-cover object-right"
@@ -247,7 +273,7 @@ export const HomePage: React.FC = () => {
               {/* Background Art & Vignette */}
               <div className="absolute inset-0 z-0 opacity-60 transition-transform duration-700 group-hover:scale-105 group-hover:opacity-85 pointer-events-none">
                 <SafeImage
-                  src={BRANDING_ASSETS.moq}
+                  src={moqCardImage}
                   alt="MOQ Minimum Quantity Store"
                   fallbackSrc={BRANDING_ASSETS.logo}
                   className="w-full h-full object-cover object-right"

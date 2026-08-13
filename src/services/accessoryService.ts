@@ -1,4 +1,6 @@
 import { CheckoutAccessory, StoreType } from '../types/checkout';
+import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
+import { convertPhpToUsd, convertUsdToPhp } from '../utils/currencyUtils';
 
 const ACCESSORIES_STORAGE_KEY = 'gkn_checkout_accessories_v2';
 
@@ -52,35 +54,127 @@ type AccessoryListener = (accessories: CheckoutAccessory[]) => void;
 class AccessoryService {
   private listeners: Set<AccessoryListener> = new Set();
   private cache: CheckoutAccessory[] | null = null;
+  private isSupabaseSyncing = false;
+  private isSupabaseInitialized = false;
 
   public getAccessories(): CheckoutAccessory[] {
-    if (this.cache) {
-      return [...this.cache];
-    }
-
-    try {
-      const stored = localStorage.getItem(ACCESSORIES_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as CheckoutAccessory[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Normalize entries to ensure missing fields are defaulted
-          this.cache = parsed.map((acc, idx) => ({
-            ...acc,
-            enabled: acc.enabled ?? (acc as any).active ?? true,
-            calculationMode: acc.calculationMode || (acc as any).calculationType?.toLowerCase() || 'manual',
-            displayOrder: acc.displayOrder ?? idx + 1,
-            availableStores: acc.availableStores || ['all'],
-          }));
-          return [...this.cache];
+    if (!this.cache) {
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const stored = localStorage.getItem(ACCESSORIES_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored) as CheckoutAccessory[];
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              // Normalize entries to ensure missing fields are defaulted
+              this.cache = parsed.map((acc, idx) => ({
+                ...acc,
+                enabled: acc.enabled ?? (acc as any).active ?? true,
+                calculationMode: acc.calculationMode || (acc as any).calculationType?.toLowerCase() || 'manual',
+                displayOrder: acc.displayOrder ?? idx + 1,
+                availableStores: acc.availableStores || ['all'],
+              }));
+            }
+          }
+        } catch (err) {
+          console.error('[AccessoryService] Error loading accessories from localStorage:', err);
         }
       }
-    } catch (err) {
-      console.error('[AccessoryService] Error loading accessories from localStorage:', err);
+
+      if (!this.cache) {
+        this.cache = [...DEFAULT_ACCESSORIES];
+        this.saveToStorage(this.cache);
+      }
     }
 
-    this.cache = [...DEFAULT_ACCESSORIES];
-    this.saveToStorage(this.cache);
+    if (isSupabaseConfigured && !this.isSupabaseInitialized && !this.isSupabaseSyncing) {
+      this.syncFromSupabase();
+    }
+
     return [...this.cache];
+  }
+
+  public async syncFromSupabase(): Promise<void> {
+    if (!isSupabaseConfigured || this.isSupabaseSyncing) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    this.isSupabaseSyncing = true;
+    try {
+      const { data, error } = await client.from('checkout_accessories').select('*').order('sort_order');
+      if (error) {
+        console.error('[AccessoryService] Error fetching checkout_accessories:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const mapped: CheckoutAccessory[] = data.map((row: any, idx: number) => ({
+          id: row.id,
+          name: row.name,
+          description: row.description || '',
+          priceUsd: convertPhpToUsd(Number(row.price_php || 0)),
+          enabled: row.is_enabled ?? true,
+          displayOrder: row.sort_order || idx + 1,
+          availableStores: row.available_stores && row.available_stores.length > 0 ? row.available_stores : ['all'],
+          calculationMode: (row.calculation_mode || 'MANUAL').toLowerCase() as any,
+          multiplier: Number(row.multiplier || 1),
+        }));
+
+        this.cache = mapped;
+        this.saveToStorage(mapped);
+        this.notifyListeners(mapped);
+      }
+    } catch (err) {
+      console.error('[AccessoryService] Exception during syncFromSupabase:', err);
+    } finally {
+      this.isSupabaseSyncing = false;
+      this.isSupabaseInitialized = true;
+    }
+  }
+
+  private async persistAccessoryToSupabase(acc: CheckoutAccessory): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+      const payload: any = {
+        name: acc.name,
+        description: acc.description || null,
+        calculation_mode: (acc.calculationMode || 'MANUAL').toUpperCase(),
+        multiplier: acc.multiplier || 1,
+        price_php: convertUsdToPhp(acc.priceUsd),
+        available_stores: acc.availableStores || ['all'],
+        is_enabled: acc.enabled ?? true,
+        sort_order: acc.displayOrder || 1,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (acc.id && acc.id.includes('-') && acc.id.length >= 30) {
+        payload.id = acc.id;
+      }
+
+      const { error } = await client.from('checkout_accessories').upsert(payload);
+      if (error) {
+        console.warn('[AccessoryService] Notice persisting accessory to Supabase:', error.message);
+      }
+    } catch (err) {
+      console.error('[AccessoryService] Failed to persist accessory to Supabase:', err);
+    }
+  }
+
+  private async deleteAccessoryFromSupabase(id: string): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+      const { error } = await client.from('checkout_accessories').delete().eq('id', id);
+      if (error) {
+        console.warn('[AccessoryService] Notice deleting accessory from Supabase:', error.message);
+      }
+    } catch (err) {
+      console.error('[AccessoryService] Failed to delete accessory from Supabase:', err);
+    }
   }
 
   public saveAccessories(accessories: CheckoutAccessory[]): CheckoutAccessory[] {
@@ -89,6 +183,12 @@ class AccessoryService {
     this.cache = sorted;
     this.saveToStorage(sorted);
     this.notifyListeners(sorted);
+
+    // Asynchronously persist all to Supabase
+    if (isSupabaseConfigured) {
+      sorted.forEach((acc) => this.persistAccessoryToSupabase(acc));
+    }
+
     return sorted;
   }
 
@@ -134,6 +234,7 @@ class AccessoryService {
     if (filtered.length === current.length) return false;
 
     this.saveAccessories(filtered);
+    this.deleteAccessoryFromSupabase(id);
     return true;
   }
 
@@ -164,6 +265,7 @@ class AccessoryService {
   }
 
   private saveToStorage(accessories: CheckoutAccessory[]) {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(ACCESSORIES_STORAGE_KEY, JSON.stringify(accessories));
     } catch (err) {
@@ -173,3 +275,4 @@ class AccessoryService {
 }
 
 export const accessoryService = new AccessoryService();
+

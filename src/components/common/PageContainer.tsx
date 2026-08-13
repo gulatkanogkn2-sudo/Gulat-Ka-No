@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { ResponsiveContainer } from '../layout/ResponsiveContainer';
 import { APP_CONFIG } from '../../app/config';
 import { systemSettingsService } from '../../services/systemSettingsService';
+import { WebsiteManagerService } from '../../services/websiteManagerService';
 
 export interface PageContainerProps {
   title?: string;
@@ -24,19 +25,30 @@ export const PageContainer: React.FC<PageContainerProps> = ({
     // Scroll to top when the component mounts
     window.scrollTo(0, 0);
     
-    const updateTitle = () => {
+    const updateTitle = async () => {
+      const websiteConfig = await WebsiteManagerService.getWebsiteConfig();
+      const brandName = websiteConfig?.branding?.brandName;
+      const browserTitle = websiteConfig?.branding?.browserTitle;
       const general = systemSettingsService.getSettings()?.general;
-      const siteTitle = general?.websiteName || APP_CONFIG.name;
+      const siteTitle = brandName || general?.websiteName || APP_CONFIG.name;
+      
       if (title) {
         document.title = `${title} | ${siteTitle}`;
       } else {
-        document.title = siteTitle;
+        document.title = browserTitle || siteTitle;
       }
     };
 
     updateTitle();
-    const unsubscribe = systemSettingsService.subscribe(updateTitle);
-    return () => unsubscribe();
+    const unsubSystem = systemSettingsService.subscribe(updateTitle);
+    const unsubWebsite = WebsiteManagerService.subscribeToConfigUpdates(() => {
+      updateTitle();
+    });
+
+    return () => {
+      unsubSystem();
+      unsubWebsite();
+    };
   }, [title]);
 
   return (

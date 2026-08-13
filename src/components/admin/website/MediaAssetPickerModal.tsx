@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Search, Image as ImageIcon, Check, Sparkles, Filter, ExternalLink, FileText, HardDrive, Upload, Trash2 } from 'lucide-react';
+import { X, Search, Image as ImageIcon, Check, Sparkles, Filter, ExternalLink, FileText, HardDrive, Upload, Trash2, Loader2 } from 'lucide-react';
 import { mediaLibraryService } from '../../../services/mediaLibraryService';
 import { MediaAssetItem, MediaCategory } from '../../../types/mediaLibrary';
+import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
 
 export interface MediaAssetPickerModalProps {
   isOpen: boolean;
@@ -50,17 +51,46 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
     'Documents',
   ];
 
-  const handleModalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleModalFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
+    setIsUploading(true);
+    try {
+      let finalUrl = '';
+      if (isSupabaseConfigured) {
+        const client = getSupabaseClient();
+        if (client) {
+          const extension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'png';
+          const storagePath = `website/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${extension}`;
+          const { error: uploadError } = await client.storage
+            .from('gkn-media')
+            .upload(storagePath, file, { contentType: file.type || 'image/png', upsert: true });
+
+          if (!uploadError) {
+            const { data: publicUrlData } = client.storage.from('gkn-media').getPublicUrl(storagePath);
+            finalUrl = publicUrlData.publicUrl;
+          } else {
+            console.warn('[MediaAssetPickerModal] Storage upload error, falling back to local dataUrl:', uploadError);
+          }
+        }
+      }
+
+      if (!finalUrl) {
+        // Fallback to data URL
+        finalUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (finalUrl) {
         const uploaded = mediaLibraryService.uploadAsset({
           name: file.name,
-          url: dataUrl,
+          url: finalUrl,
           category: selectedCategory !== 'all' ? (selectedCategory as MediaCategory) : 'Website',
           fileSize: `${(file.size / 1024).toFixed(0)} KB`,
           fileSizeBytes: file.size,
@@ -70,8 +100,11 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
         onSelectMedia(uploaded.url);
         onClose();
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('[MediaAssetPickerModal] Upload exception:', err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const filteredAssets = assets.filter((asset) => {
@@ -303,27 +336,61 @@ export const MediaInput: React.FC<MediaInputProps> = ({
   onSave,
 }) => {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isDeviceUploading, setIsDeviceUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDeviceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDeviceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
+    setIsDeviceUploading(true);
+    try {
+      let finalUrl = '';
+      if (isSupabaseConfigured) {
+        const client = getSupabaseClient();
+        if (client) {
+          const extension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'png';
+          const storagePath = `website/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${extension}`;
+          const { error: uploadError } = await client.storage
+            .from('gkn-media')
+            .upload(storagePath, file, { contentType: file.type || 'image/png', upsert: true });
+
+          if (!uploadError) {
+            const { data: publicUrlData } = client.storage.from('gkn-media').getPublicUrl(storagePath);
+            finalUrl = publicUrlData.publicUrl;
+          } else {
+            console.warn('[MediaInput] Storage upload error, falling back to local dataUrl:', uploadError);
+          }
+        }
+      }
+
+      if (!finalUrl) {
+        // Fallback to data URL
+        finalUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (finalUrl) {
         mediaLibraryService.uploadAsset({
           name: file.name,
-          url: dataUrl,
+          url: finalUrl,
           category: 'Website',
           fileSize: `${(file.size / 1024).toFixed(0)} KB`,
           fileSizeBytes: file.size,
         });
-        onChange(dataUrl);
+        onChange(finalUrl);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('[MediaInput] Upload error:', err);
+    } finally {
+      setIsDeviceUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   return (
@@ -347,7 +414,12 @@ export const MediaInput: React.FC<MediaInputProps> = ({
         {/* Preview Container — full artwork preview without cropping */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="w-24 h-24 sm:w-28 sm:h-20 rounded-xl bg-slate-900 border border-slate-800 p-1 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-inner">
-            {value ? (
+            {isDeviceUploading ? (
+              <div className="flex flex-col items-center justify-center gap-1 text-[#00D9FF]">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-[9px] font-mono">UPLOADING...</span>
+              </div>
+            ) : value ? (
               <img src={value} alt={label} className="w-full h-full object-contain rounded-lg" />
             ) : (
               <ImageIcon className="w-6 h-6 text-slate-600" />
@@ -356,7 +428,11 @@ export const MediaInput: React.FC<MediaInputProps> = ({
 
           <div className="flex-1 min-w-0 space-y-1">
             <div className="text-xs font-bold text-slate-200 truncate">
-              {value ? (value.startsWith('data:') ? 'Uploaded File (Device)' : value.split('/').pop()) : 'No File Selected'}
+              {isDeviceUploading
+                ? 'Uploading to Supabase Storage...'
+                : value
+                ? (value.startsWith('data:') ? 'Uploaded File (Device)' : value.split('/').pop())
+                : 'No File Selected'}
             </div>
             <p className="text-[10px] text-slate-400 truncate font-mono">
               {value ? (value.length > 60 ? value.substring(0, 60) + '...' : value) : 'Select an image file to upload directly from your device.'}
@@ -369,9 +445,11 @@ export const MediaInput: React.FC<MediaInputProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3.5 py-2 bg-[#00D9FF] hover:bg-[#00D9FF]/90 text-black rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,217,255,0.25)] active:scale-95 cursor-pointer"
+            disabled={isDeviceUploading}
+            className="px-3.5 py-2 bg-[#00D9FF] hover:bg-[#00D9FF]/90 text-black rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,217,255,0.25)] active:scale-95 cursor-pointer disabled:opacity-50"
           >
-            <Upload className="w-3.5 h-3.5" /> {uploadButtonText || 'Upload File'}
+            {isDeviceUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            {isDeviceUploading ? 'Uploading...' : (uploadButtonText || 'Upload File')}
           </button>
 
           <button
