@@ -52,3 +52,15 @@ export const getSupabaseClient = (): SupabaseClient<Database> | null => {
 // Fallback dummy client accessor to prevent null exceptions when unconfigured in preview
 export const supabase = getSupabaseClient();
 
+export const hasAuthenticatedSupabaseSession = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured) return false;
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const { data: { session } } = await client.auth.getSession();
+    return Boolean(session?.user?.id);
+  } catch {
+    return false;
+  }
+};
+

@@ -2,7 +2,10 @@ import { ProductData } from '../components/product/ProductCard';
 import {
   ProductManagementService,
   convertAdminToDetailedProduct,
+  stringToUuid,
 } from './productManagementService';
+import { isSupabaseConfigured, getSupabaseClient, hasAuthenticatedSupabaseSession } from '../lib/supabase';
+import { AdminProduct, AdminStoreType, AdminProductStatus } from '../types/adminProduct';
 
 export interface DetailedProduct extends ProductData {
   id: string;
@@ -578,20 +581,123 @@ const MOCK_MOQ_PRODUCTS: DetailedProduct[] = [
   },
 ];
 
+function mapDbRowToDetailedProduct(row: any, variantsRows: any[] = [], targetStore: string): DetailedProduct {
+  const storeSpecific = (row.store_specific_settings_jsonb as any) || {};
+  const primaryStore = (row.primary_store_type as string) || targetStore;
+
+  const adminProd: AdminProduct = {
+    id: row.id,
+    name: row.name,
+    scientificName: row.scientific_name || undefined,
+    shortDescription: row.short_description || undefined,
+    fullDescription: row.full_description || undefined,
+    adminNotes: row.admin_notes || undefined,
+    category: row.category || 'Active',
+    storeType: primaryStore as AdminStoreType,
+    price: row.price_php ?? 0,
+    currency: row.currency || '$',
+    status: (row.status as AdminProductStatus) || 'Active',
+    isVisible: row.is_visible ?? true,
+    isFeatured: row.is_featured ?? false,
+    imageUrl: row.image_url || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80',
+    gallery: row.gallery || undefined,
+    casNumber: row.cas_number || undefined,
+    testingLab: row.testing_lab || undefined,
+    purity: row.purity || undefined,
+    sellingUnit: (row.selling_unit as 'vial' | 'kit') || 'vial',
+    vialsPerKit: row.vials_per_kit ?? 10,
+    groupBuySettings: storeSpecific.groupBuySettings || undefined,
+    onHandSettings: storeSpecific.onHandSettings || (row.inventory_quantity != null ? {
+      inventoryQuantity: row.inventory_quantity,
+      lowStockThreshold: 20,
+      dispatchTime: 'Same-Day Cold Dispatch (24H)',
+    } : undefined),
+    moqSettings: storeSpecific.moqSettings || undefined,
+    storeSettings: storeSpecific.storeSettings || undefined,
+    lastUpdated: row.updated_at || new Date().toISOString(),
+    updatedBy: storeSpecific.updatedBy || 'Admin Team',
+    variants: (variantsRows || []).map((v) => ({
+      id: v.id,
+      name: v.name || v.strength || v.size || 'Standard',
+      strength: v.strength || undefined,
+      size: v.size || undefined,
+      price: v.price_php ?? row.price_php ?? 0,
+      costPrice: v.cost_price_php ?? 0,
+      minOrder: v.min_order ?? 1,
+      orderStep: v.order_step ?? 1,
+      inventoryQuantity: v.inventory_quantity ?? undefined,
+      sku: v.sku || undefined,
+    })),
+  };
+
+  const dp = convertAdminToDetailedProduct(adminProd, targetStore);
+  if (row.gallery && Array.isArray(row.gallery)) {
+    dp.gallery = row.gallery;
+  }
+  dp.unitInfo = dp.unitInfo || (dp.sellingUnit === 'kit' ? `/ ${dp.vialsPerKit || 10} Vials Kit` : '/ Single Vial');
+  dp.stockStatus = dp.stockStatus || 'In Stock';
+  return dp;
+}
+
+async function fetchStoreProductsFromSupabase(targetStore: 'groupbuy' | 'onhand' | 'moq'): Promise<DetailedProduct[]> {
+  if (!isSupabaseConfigured) return [];
+  const client = getSupabaseClient();
+  if (!client) return [];
+
+  try {
+    const { data: prodData, error: prodError } = await client
+      .from('products')
+      .select('*, product_variants(*)')
+      .eq('primary_store_type', targetStore)
+      .is('deleted_at', null)
+      .eq('is_visible', true);
+
+    if (prodError) {
+      console.error(`[ProductService] Error fetching ${targetStore} products from Supabase:`, prodError);
+      return [];
+    }
+
+    if (!prodData || prodData.length === 0) {
+      return [];
+    }
+
+    const detailedProducts: DetailedProduct[] = prodData
+      .filter((row: any) => {
+        const st = (row.status || '').toLowerCase();
+        return st !== 'draft' && st !== 'archived' && st !== 'inactive' && st !== 'hidden';
+      })
+      .map((row: any) => {
+        const variantsRows = row.product_variants || [];
+        return mapDbRowToDetailedProduct(row, variantsRows, targetStore);
+      });
+
+    return detailedProducts;
+  } catch (err) {
+    console.error(`[ProductService] Exception fetching ${targetStore} products from Supabase:`, err);
+    return [];
+  }
+}
+
 export const ProductService = {
   // Fetch GroupBuy Store Products
   async getGroupBuyProducts(search?: string, category?: string): Promise<DetailedProduct[]> {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    
+    let dbProducts: DetailedProduct[] = [];
+    if (isSupabaseConfigured) {
+      dbProducts = await fetchStoreProductsFromSupabase('groupbuy');
+    }
+
     // Query live admin product store
     const adminProducts = ProductManagementService.getProductsForStore('groupbuy');
-    const existingIds = new Set(adminProducts.map((p) => p.id));
+    const existingIds = new Set(dbProducts.map((p) => p.id));
     
-    // Merge admin products with mock products that aren't duplicated or deleted
+    // Merge Supabase products with admin products & mock products that aren't duplicated or deleted
     let result = [
-      ...adminProducts,
+      ...dbProducts,
+      ...adminProducts.filter((p) => !existingIds.has(p.id)),
       ...MOCK_GROUPBUY_PRODUCTS.filter(
-        (p) => !existingIds.has(p.id) && !ProductManagementService.isProductDeleted(p.id, 'groupbuy')
+        (p) => !existingIds.has(p.id) &&
+               !adminProducts.some((ap) => ap.id === p.id) &&
+               !ProductManagementService.isProductDeleted(p.id, 'groupbuy')
       ),
     ];
 
@@ -618,16 +724,22 @@ export const ProductService = {
 
   // Fetch OnHand Store Products
   async getOnHandProducts(search?: string, category?: string): Promise<DetailedProduct[]> {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    let dbProducts: DetailedProduct[] = [];
+    if (isSupabaseConfigured) {
+      dbProducts = await fetchStoreProductsFromSupabase('onhand');
+    }
 
     // Query live admin product store
     const adminProducts = ProductManagementService.getProductsForStore('onhand');
-    const existingIds = new Set(adminProducts.map((p) => p.id));
+    const existingIds = new Set(dbProducts.map((p) => p.id));
 
     let result = [
-      ...adminProducts,
+      ...dbProducts,
+      ...adminProducts.filter((p) => !existingIds.has(p.id)),
       ...MOCK_ONHAND_PRODUCTS.filter(
-        (p) => !existingIds.has(p.id) && !ProductManagementService.isProductDeleted(p.id, 'onhand')
+        (p) => !existingIds.has(p.id) &&
+               !adminProducts.some((ap) => ap.id === p.id) &&
+               !ProductManagementService.isProductDeleted(p.id, 'onhand')
       ),
     ];
 
@@ -654,16 +766,22 @@ export const ProductService = {
 
   // Fetch MOQ Store Products
   async getMoqProducts(search?: string, category?: string): Promise<DetailedProduct[]> {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    let dbProducts: DetailedProduct[] = [];
+    if (isSupabaseConfigured) {
+      dbProducts = await fetchStoreProductsFromSupabase('moq');
+    }
 
     // Query live admin product store
     const adminProducts = ProductManagementService.getProductsForStore('moq');
-    const existingIds = new Set(adminProducts.map((p) => p.id));
+    const existingIds = new Set(dbProducts.map((p) => p.id));
 
     let result = [
-      ...adminProducts,
+      ...dbProducts,
+      ...adminProducts.filter((p) => !existingIds.has(p.id)),
       ...MOCK_MOQ_PRODUCTS.filter(
-        (p) => !existingIds.has(p.id) && !ProductManagementService.isProductDeleted(p.id, 'moq')
+        (p) => !existingIds.has(p.id) &&
+               !adminProducts.some((ap) => ap.id === p.id) &&
+               !ProductManagementService.isProductDeleted(p.id, 'moq')
       ),
     ];
 
@@ -690,13 +808,36 @@ export const ProductService = {
 
   // Get single product by ID from any store
   async getProductById(id: string): Promise<DetailedProduct | null> {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
     if (ProductManagementService.isProductDeleted(id)) {
       return null;
     }
+
+    if (await hasAuthenticatedSupabaseSession()) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const prodUuid = stringToUuid(id);
+          const { data: prodRow, error } = await client
+            .from('products')
+            .select('*, product_variants(*)')
+            .eq('id', prodUuid)
+            .is('deleted_at', null)
+            .maybeSingle();
+
+          if (!error && prodRow && prodRow.is_visible) {
+            const storeType = (prodRow.primary_store_type as string) || 'groupbuy';
+            if (!ProductManagementService.isProductDeleted(prodRow.id, storeType)) {
+              const variantsRows = (prodRow as any).product_variants || [];
+              return mapDbRowToDetailedProduct(prodRow, variantsRows, storeType);
+            }
+          }
+        } catch (err) {
+          console.error(`[ProductService] Error fetching product ${id} from Supabase:`, err);
+        }
+      }
+    }
     
-    // First check Admin Product Management Service
+    // Check Admin Product Management Service
     const adminProduct = ProductManagementService.getRawProducts().find((p) => p.id === id);
     if (adminProduct && !ProductManagementService.isProductDeleted(id, adminProduct.storeType)) {
       return convertAdminToDetailedProduct(adminProduct, adminProduct.storeType || 'groupbuy');

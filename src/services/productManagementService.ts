@@ -9,7 +9,7 @@ import {
 } from '../types/adminProduct';
 import { getStoreSellingUnitConfig } from '../utils/vialCalculation';
 import type { DetailedProduct } from './productService';
-import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
+import { isSupabaseConfigured, getSupabaseClient, hasAuthenticatedSupabaseSession } from '../lib/supabase';
 
 export function isProductInStore(p: AdminProduct, targetStore: string): boolean {
   if (ProductManagementService.isProductDeleted(p.id, targetStore)) {
@@ -471,11 +471,42 @@ function saveProductsToStorage(products: AdminProduct[]) {
 let deletedStoreProducts: Set<string> = loadDeletedFromStorage();
 let mockProducts: AdminProduct[] = loadProductsFromStorage(SEED_PRODUCTS);
 
+export function isUuid(str: string): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+}
+
+export function stringToUuid(str: string): string {
+  if (!str) return '00000000-0000-4000-8000-000000000000';
+  if (isUuid(str)) return str.toLowerCase();
+
+  let h1 = 0x811c9dc5, h2 = 0x01000193, h3 = 0x84222325, h4 = 0x1b873593;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul(h2 ^ c, 0x0550ba4f);
+    h3 = Math.imul(h3 ^ c, 0x1b873593);
+    h4 = Math.imul(h4 ^ c, 0x811c9dc5);
+  }
+
+  const toHex8 = (n: number) => (n >>> 0).toString(16).padStart(8, '0');
+  const hex32 = toHex8(h1) + toHex8(h2) + toHex8(h3) + toHex8(h4);
+
+  const part1 = hex32.slice(0, 8);
+  const part2 = hex32.slice(8, 12);
+  const part3 = '4' + hex32.slice(13, 16);
+  const part4 = 'a' + hex32.slice(17, 20);
+  const part5 = hex32.slice(20, 32);
+
+  return `${part1}-${part2}-${part3}-${part4}-${part5}`;
+}
+
 function mapDbRowToAdminProduct(row: any, variantsRows: any[] = []): AdminProduct {
   const storeSpecific = (row.store_specific_settings_jsonb as any) || {};
+  const appId = storeSpecific.app_id || row.id;
 
   return {
-    id: row.id,
+    id: appId,
     name: row.name,
     scientificName: row.scientific_name || undefined,
     shortDescription: row.short_description || undefined,
@@ -506,7 +537,7 @@ function mapDbRowToAdminProduct(row: any, variantsRows: any[] = []): AdminProduc
     lastUpdated: row.updated_at ? row.updated_at.replace('T', ' ').slice(0, 16) : new Date().toISOString().replace('T', ' ').slice(0, 16),
     updatedBy: storeSpecific.updatedBy || 'Admin Team',
     variants: (variantsRows || []).map((v) => ({
-      id: v.id,
+      id: (v.sku && !isUuid(v.sku)) ? v.sku : v.id,
       name: v.name || 'Standard',
       strength: v.strength || undefined,
       size: v.size || undefined,
@@ -522,6 +553,7 @@ function mapDbRowToAdminProduct(row: any, variantsRows: any[] = []): AdminProduc
 
 function mapAdminProductToDbRow(p: AdminProduct): any {
   const storeSpecific = {
+    app_id: p.id,
     groupBuySettings: p.groupBuySettings,
     onHandSettings: p.onHandSettings,
     moqSettings: p.moqSettings,
@@ -533,7 +565,7 @@ function mapAdminProductToDbRow(p: AdminProduct): any {
   const validStore = (['groupbuy', 'onhand', 'moq'].includes(primaryStore) ? primaryStore : 'groupbuy') as 'groupbuy' | 'onhand' | 'moq';
 
   return {
-    id: p.id,
+    id: stringToUuid(p.id),
     name: p.name,
     scientific_name: p.scientificName || null,
     short_description: p.shortDescription || null,
@@ -560,9 +592,12 @@ function mapAdminProductToDbRow(p: AdminProduct): any {
 }
 
 function mapAdminVariantToDbRow(productId: string, v: AdminProductVariant): any {
+  const prodUuid = stringToUuid(productId);
+  const varUuid = stringToUuid(`${productId}:${v.id}`);
+
   return {
-    id: v.id,
-    product_id: productId,
+    id: varUuid,
+    product_id: prodUuid,
     name: v.name || 'Standard',
     strength: v.strength || null,
     size: v.size || null,
@@ -571,24 +606,25 @@ function mapAdminVariantToDbRow(productId: string, v: AdminProductVariant): any 
     min_order: v.minOrder ?? 1,
     order_step: v.orderStep ?? 1,
     inventory_quantity: v.inventoryQuantity ?? null,
-    sku: v.sku || null,
+    sku: v.sku || (v.id !== varUuid ? v.id : null),
     updated_at: new Date().toISOString(),
   };
 }
 
 async function saveProductToSupabase(p: AdminProduct): Promise<void> {
-  if (!isSupabaseConfigured) return;
+  if (!(await hasAuthenticatedSupabaseSession())) return;
   const client = getSupabaseClient();
   if (!client) return;
 
   try {
+    const prodUuid = stringToUuid(p.id);
     const prodRow = mapAdminProductToDbRow(p);
     const { error: prodErr } = await client
       .from('products')
       .upsert(prodRow, { onConflict: 'id' });
 
     if (prodErr) {
-      console.error(`[ProductManagementService] Error saving product ${p.id} to Supabase:`, prodErr);
+      console.error(`[ProductManagementService] Error saving product ${p.id} (${prodUuid}) to Supabase:`, prodErr);
       return;
     }
 
@@ -602,16 +638,16 @@ async function saveProductToSupabase(p: AdminProduct): Promise<void> {
         console.error(`[ProductManagementService] Error saving variants for product ${p.id} to Supabase:`, varErr);
       }
 
-      const currentVariantIds = p.variants.map((v) => v.id);
+      const currentVariantUuids = varRows.map((vr) => vr.id);
       const { data: existingVars } = await client
         .from('product_variants')
         .select('id')
-        .eq('product_id', p.id);
+        .eq('product_id', prodUuid);
 
       if (existingVars && existingVars.length > 0) {
         const toDelete = existingVars
           .map((ev) => ev.id)
-          .filter((vid) => !currentVariantIds.includes(vid));
+          .filter((vid) => !currentVariantUuids.includes(vid));
 
         if (toDelete.length > 0) {
           await client.from('product_variants').delete().in('id', toDelete);
@@ -624,18 +660,18 @@ async function saveProductToSupabase(p: AdminProduct): Promise<void> {
 }
 
 async function deleteProductFromSupabase(id: string): Promise<void> {
-  if (!isSupabaseConfigured) return;
+  if (!(await hasAuthenticatedSupabaseSession())) return;
   const client = getSupabaseClient();
   if (!client) return;
 
   try {
-    const altId = id.startsWith('prod-') ? id.replace('prod-', '') : `prod-${id}`;
+    const prodUuid = stringToUuid(id);
     const nowIso = new Date().toISOString();
 
     const { error } = await client
       .from('products')
       .update({ deleted_at: nowIso, updated_at: nowIso })
-      .or(`id.eq.${id},id.eq.${altId}`);
+      .eq('id', prodUuid);
 
     if (error) {
       console.error(`[ProductManagementService] Error deleting product ${id} from Supabase:`, error);
@@ -646,7 +682,7 @@ async function deleteProductFromSupabase(id: string): Promise<void> {
 }
 
 async function syncFromSupabase(): Promise<void> {
-  if (!isSupabaseConfigured) return;
+  if (!(await hasAuthenticatedSupabaseSession())) return;
   const client = getSupabaseClient();
   if (!client) return;
 
@@ -683,11 +719,6 @@ async function syncFromSupabase(): Promise<void> {
 
       mockProducts = loadedProducts;
       saveProductsToStorage(mockProducts);
-    } else {
-      console.info('[ProductManagementService] Supabase products table is empty. Seeding default products...');
-      for (const p of SEED_PRODUCTS) {
-        await saveProductToSupabase(p);
-      }
     }
   } catch (err) {
     console.error('[ProductManagementService] Exception during syncFromSupabase:', err);
@@ -699,7 +730,7 @@ export const ProductManagementService = {
    * Get filtered products with pagination & store counts
    */
   async getProducts(params: ProductFilterParams = {}): Promise<ProductListResult> {
-    if (isSupabaseConfigured) {
+    if (await hasAuthenticatedSupabaseSession()) {
       await syncFromSupabase();
     } else {
       await new Promise((resolve) => setTimeout(resolve, 80));
@@ -792,15 +823,15 @@ export const ProductManagementService = {
    * Get single Product by ID
    */
   async getProductById(id: string): Promise<AdminProduct | null> {
-    if (isSupabaseConfigured) {
+    if (await hasAuthenticatedSupabaseSession()) {
       const client = getSupabaseClient();
       if (client) {
-        const altId = id.startsWith('prod-') ? id.replace('prod-', '') : `prod-${id}`;
+        const prodUuid = stringToUuid(id);
         try {
           const { data: prod, error } = await client
             .from('products')
             .select('*, product_variants(*)')
-            .or(`id.eq.${id},id.eq.${altId}`)
+            .eq('id', prodUuid)
             .is('deleted_at', null)
             .maybeSingle();
 
@@ -866,7 +897,7 @@ export const ProductManagementService = {
     mockProducts = [newProduct, ...mockProducts];
     saveProductsToStorage(mockProducts);
 
-    if (isSupabaseConfigured) {
+    if (await hasAuthenticatedSupabaseSession()) {
       await saveProductToSupabase(newProduct);
     }
 
@@ -896,7 +927,7 @@ export const ProductManagementService = {
     mockProducts[index] = updated;
     saveProductsToStorage(mockProducts);
 
-    if (isSupabaseConfigured) {
+    if (await hasAuthenticatedSupabaseSession()) {
       await saveProductToSupabase(updated);
     }
 
@@ -968,7 +999,7 @@ export const ProductManagementService = {
 
     saveProductsToStorage(mockProducts);
 
-    if (isSupabaseConfigured) {
+    if (await hasAuthenticatedSupabaseSession()) {
       await deleteProductFromSupabase(id);
     }
 
@@ -1040,14 +1071,15 @@ export const ProductManagementService = {
 
     saveProductsToStorage(mockProducts);
 
-    if (isSupabaseConfigured) {
+    if (await hasAuthenticatedSupabaseSession()) {
       const client = getSupabaseClient();
       if (client && productIds.length > 0) {
         try {
+          const uuids = productIds.map((id) => stringToUuid(id));
           await client
             .from('products')
             .update({ status, updated_at: new Date().toISOString() })
-            .in('id', productIds);
+            .in('id', uuids);
         } catch (err) {
           console.error('[ProductManagementService] Error in bulkUpdateStatus on Supabase:', err);
         }
@@ -1339,7 +1371,7 @@ export const ProductManagementService = {
       createdProductsCount++;
       totalVariantsCount += pData.variants.length;
 
-      if (isSupabaseConfigured) {
+      if (await hasAuthenticatedSupabaseSession()) {
         await saveProductToSupabase(newProduct);
       }
     }
