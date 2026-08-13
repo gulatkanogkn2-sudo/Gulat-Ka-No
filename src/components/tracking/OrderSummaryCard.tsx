@@ -94,7 +94,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
             <Truck className="w-4 h-4 text-[#FF2ED1]" />
             Courier & Logistics
           </h4>
-          <span className="text-[10px] text-slate-400">Active Waybill</span>
+          <span className="text-[10px] text-slate-400">Verified Shipment Details</span>
         </div>
 
         <div className="space-y-2 text-xs">
@@ -109,19 +109,19 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
 
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Carrier:</span>
-            <span className="font-bold text-white">{order.courier || 'LBC Express'}</span>
+            <span className="font-bold text-white">{order.courier || 'Not assigned'}</span>
           </div>
 
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Waybill No.:</span>
             <span className="font-mono font-bold text-[#00D9FF] bg-white/5 px-2 py-0.5 rounded border border-white/10">
-              {order.trackingNumber || 'STAGING_PENDING'}
+              {order.trackingNumber || 'Not assigned'}
             </span>
           </div>
 
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Est. Arrival:</span>
-            <span className="text-slate-200 font-bold">{order.estimatedDelivery || '24-48 Hours'}</span>
+            <span className="text-slate-200 font-bold">{order.estimatedDelivery || 'Not available'}</span>
           </div>
         </div>
       </div>
@@ -207,3 +207,4 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
     </div>
   );
 };
+
