@@ -249,7 +249,7 @@ export const AdminOrdersPage: React.FC = () => {
       </div>
 
       {/* Metric Cards Summary */}
-      <OrderStatsHeader />
+      <OrderStatsHeader orders={orders} />
 
       {/* Independent Store Order Queues Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-2 bg-slate-900/90 border border-slate-800 rounded-xl font-mono text-xs">
@@ -376,3 +376,4 @@ export const AdminOrdersPage: React.FC = () => {
     </div>
   );
 };
+
