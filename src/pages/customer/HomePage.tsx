@@ -214,7 +214,7 @@ export const HomePage: React.FC = () => {
                   <div className="space-y-2 py-3 border-t border-b border-white/10 font-mono text-xs text-slate-300">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></span>
-                      <span>Zero waiting time â€” items packed and shipped immediately</span>
+                      <span>Zero waiting time — items packed and shipped immediately</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></span>
