@@ -1,9 +1,14 @@
 import React from 'react';
 import { ShoppingBag, Clock, Truck, DollarSign, Layers, Package, ShieldCheck } from 'lucide-react';
 import { OrderManagementService } from '../../../services/orderManagementService';
+import { OrderDetail } from '../../../types/order';
 
-export const OrderStatsHeader: React.FC = () => {
-  const stats = OrderManagementService.getOrderStats();
+interface OrderStatsHeaderProps {
+  orders: OrderDetail[];
+}
+
+export const OrderStatsHeader: React.FC<OrderStatsHeaderProps> = ({ orders }) => {
+  const stats = OrderManagementService.getOrderStats(orders);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
@@ -75,3 +80,4 @@ export const OrderStatsHeader: React.FC = () => {
     </div>
   );
 };
+
