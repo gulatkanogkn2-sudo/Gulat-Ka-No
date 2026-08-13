@@ -1299,18 +1299,18 @@ export class OrderManagementService {
   /**
    * Helper summary statistics for the dashboard header
    */
-  static getOrderStats() {
-    const total = ADMIN_MOCK_ORDERS.length;
-    const pendingVerification = ADMIN_MOCK_ORDERS.filter(
+  static getOrderStats(orders: OrderDetail[] = []) {
+    const total = orders.length;
+    const pendingVerification = orders.filter(
       (o) => o.status === 'PAYMENT_VERIFICATION' || o.paymentStatus === 'VERIFICATION_PENDING'
     ).length;
-    const readyToShip = ADMIN_MOCK_ORDERS.filter(
+    const readyToShip = orders.filter(
       (o) => o.status === 'READY_TO_SHIP' || o.status === 'PACKING'
     ).length;
-    const groupBuyCount = ADMIN_MOCK_ORDERS.filter((o) => o.storeType === 'groupbuy').length;
-    const onHandCount = ADMIN_MOCK_ORDERS.filter((o) => o.storeType === 'onhand').length;
-    const moqCount = ADMIN_MOCK_ORDERS.filter((o) => o.storeType === 'moq').length;
-    const totalRevenue = ADMIN_MOCK_ORDERS.filter(
+    const groupBuyCount = orders.filter((o) => o.storeType === 'groupbuy').length;
+    const onHandCount = orders.filter((o) => o.storeType === 'onhand').length;
+    const moqCount = orders.filter((o) => o.storeType === 'moq').length;
+    const totalRevenue = orders.filter(
       (o) => o.paymentStatus === 'PAID'
     ).reduce((sum, o) => sum + o.grandTotal, 0);
 
@@ -1325,3 +1325,4 @@ export class OrderManagementService {
     };
   }
 }
+
