@@ -4,17 +4,24 @@ import { APP_CONFIG } from '../../app/config';
 import { MobileNavigation } from './MobileNavigation';
 import { useCart } from '../../context/CartContext';
 import { HeaderIconButton } from '../common/HeaderIconButton';
-import { Menu, ShoppingCart } from 'lucide-react';
+import { Download, Menu, ShoppingCart } from 'lucide-react';
 import { WebsiteManagerService } from '../../services/websiteManagerService';
 import { WebsiteConfig } from '../../types/websiteManager';
 import { BRANDING_ASSETS, SafeImage } from '../../assets/branding';
 import { systemSettingsService } from '../../services/systemSettingsService';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
 
 export const CustomerHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { openDrawer, totalItemCount } = useCart();
   const [websiteConfig, setWebsiteConfig] = useState<WebsiteConfig | null>(null);
   const [sysBrandName, setSysBrandName] = useState(() => systemSettingsService.getSettings()?.general?.brandName);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     WebsiteManagerService.getWebsiteConfig().then(setWebsiteConfig);
@@ -31,6 +38,42 @@ export const CustomerHeader: React.FC = () => {
       unsubscribeSys();
     };
   }, []);
+
+  useEffect(() => {
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as unknown as { standalone?: boolean }).standalone === true;
+
+    if (isStandalone) {
+      setIsInstalled(true);
+    }
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    await deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+  };
 
   const logoUrl = websiteConfig?.branding?.websiteLogo || BRANDING_ASSETS.logo;
   const brandName = sysBrandName || websiteConfig?.branding?.brandName || APP_CONFIG.name;
@@ -62,8 +105,20 @@ export const CustomerHeader: React.FC = () => {
             </Link>
           </div>
 
-          {/* Right Section: Shopping Cart & Primary Hamburger Trigger */}
+          {/* Right Section: Install App, Shopping Cart & Primary Hamburger Trigger */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
+            {deferredPrompt && !isInstalled && (
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="h-10 px-2.5 sm:px-4 bg-[#00D9FF]/10 hover:bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/60 rounded-xl font-mono text-[10px] sm:text-xs font-bold tracking-wider transition-all duration-300 flex items-center gap-1.5 sm:gap-2 shadow-[0_0_15px_rgba(0,217,255,0.2)] active:scale-95 whitespace-nowrap"
+                aria-label="Install App"
+              >
+                <Download className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden min-[390px]:inline">INSTALL APP</span>
+              </button>
+            )}
+
             <HeaderIconButton
               icon={<ShoppingCart className="w-5 h-5 text-[#00D9FF]" />}
               tooltip="Cart"

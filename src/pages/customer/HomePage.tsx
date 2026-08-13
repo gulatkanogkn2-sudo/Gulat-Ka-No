@@ -8,7 +8,6 @@ import {
   FlaskConical,
   Tags,
   ArrowUpRight,
-  Download,
   ShoppingCart,
   Package,
   Factory,
@@ -21,15 +20,8 @@ import { BRANDING_ASSETS, SafeImage } from '../../assets/branding';
 import { WebsiteManagerService } from '../../services/websiteManagerService';
 import { WebsiteConfig } from '../../types/websiteManager';
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
-}
-
 export const HomePage: React.FC = () => {
   const [cmsConfig, setCmsConfig] = useState<WebsiteConfig | null>(null);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState<boolean>(false);
 
   // Load CMS configuration for dynamic home banner if updated by admin
   useEffect(() => {
@@ -47,52 +39,12 @@ export const HomePage: React.FC = () => {
     };
   }, []);
 
-  // PWA Installation Detector
-  useEffect(() => {
-    // Check if running in standalone mode (already installed)
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    if (isStandalone) {
-      setIsInstalled(true);
-    }
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
-    }
-    setDeferredPrompt(null);
-  };
-
   const bannerImage = cmsConfig?.hero?.heroImage || BRANDING_ASSETS.heroArtwork;
 
   return (
     <div className="relative w-full overflow-hidden">
       <ResponsiveContainer className="py-8 relative z-10">
-        {/* ONE CLEAN LANDSCAPE HOME BANNER WITH PWA INSTALL BUTTON */}
+        {/* ONE CLEAN LANDSCAPE HOME BANNER */}
         <div className="mb-12">
           <div className="relative w-full rounded-2xl overflow-hidden border border-[#00D9FF]/30 shadow-[0_0_35px_rgba(0,217,255,0.2)] bg-gradient-to-r from-[#050810] via-[#0B132B] to-[#050810] flex items-center justify-center min-h-[140px] p-1 sm:p-2 group">
             <SafeImage
@@ -103,35 +55,7 @@ export const HomePage: React.FC = () => {
             />
             {/* Subtle Vignette Overlay for GKN Dark Luxury Aesthetic */}
             <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
-
-            {/* PWA INSTALL APP BUTTON (Desktop / Tablet Overlay on Banner) */}
-            {deferredPrompt && !isInstalled && (
-              <div className="absolute bottom-4 right-4 z-20">
-                <button
-                  type="button"
-                  onClick={handleInstallClick}
-                  className="px-4 py-2 bg-[#050810]/90 hover:bg-[#050810] text-[#00D9FF] border border-[#00D9FF] rounded-xl font-mono text-xs font-bold tracking-wider transition-all duration-300 flex items-center gap-2 shadow-[0_0_20px_rgba(0,217,255,0.4)] hover:shadow-[0_0_30px_rgba(0,217,255,0.8)] active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4 text-[#00D9FF] animate-bounce" />
-                  INSTALL APP
-                </button>
-              </div>
-            )}
           </div>
-
-          {/* PWA INSTALL APP BUTTON (Mobile Toolbar below Banner if preferred for touch accessibility) */}
-          {deferredPrompt && !isInstalled && (
-            <div className="mt-3 flex justify-end sm:hidden">
-              <button
-                type="button"
-                onClick={handleInstallClick}
-                className="w-full py-2.5 bg-[#00D9FF]/10 hover:bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF] rounded-xl font-mono text-xs font-bold tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,217,255,0.2)] active:scale-95"
-              >
-                <Download className="w-4 h-4 text-[#00D9FF]" />
-                INSTALL APP
-              </button>
-            </div>
-          )}
         </div>
 
         {/* CHOOSE YOUR STORE SECTION HEADER */}
@@ -290,7 +214,7 @@ export const HomePage: React.FC = () => {
                   <div className="space-y-2 py-3 border-t border-b border-white/10 font-mono text-xs text-slate-300">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></span>
-                      <span>Zero waiting time — items packed and shipped immediately</span>
+                      <span>Zero waiting time â€” items packed and shipped immediately</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></span>
@@ -502,3 +426,4 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+
