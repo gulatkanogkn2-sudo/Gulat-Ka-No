@@ -1,5 +1,7 @@
-import { SystemSettings } from '../types/systemSettings';
+import { SystemSettings, StoreConfig } from '../types/systemSettings';
 import { DEFAULT_SYSTEM_SETTINGS } from '../data/defaultSystemSettings';
+import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
+import { Json } from '../types/supabase';
 
 const SETTINGS_STORAGE_KEY = 'gkn_system_settings_v2';
 
@@ -8,30 +10,150 @@ type SettingsListener = (settings: SystemSettings) => void;
 class SystemSettingsService {
   private listeners: Set<SettingsListener> = new Set();
   private cachedSettings: SystemSettings | null = null;
+  private isSupabaseSyncing = false;
+  private isSupabaseInitialized = false;
 
   /**
-   * Load current system settings from localStorage or fallback to defaults
+   * Load current system settings from localStorage or fallback to defaults,
+   * triggering async Supabase sync if configured.
    */
   public getSettings(): SystemSettings {
-    if (this.cachedSettings) {
-      return this.cachedSettings;
+    if (!this.cachedSettings) {
+      try {
+        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as SystemSettings;
+          // Deep merge with defaults to ensure any newly added setting keys exist
+          this.cachedSettings = this.mergeWithDefaults(parsed);
+        }
+      } catch (error) {
+        console.error('[SystemSettingsService] Error reading settings from localStorage:', error);
+      }
+
+      if (!this.cachedSettings) {
+        this.cachedSettings = { ...DEFAULT_SYSTEM_SETTINGS };
+        this.saveToStorage(this.cachedSettings);
+      }
     }
+
+    if (isSupabaseConfigured && !this.isSupabaseInitialized && !this.isSupabaseSyncing) {
+      this.syncFromSupabase();
+    }
+
+    return this.cachedSettings;
+  }
+
+  /**
+   * Fetch store configurations from Supabase store_configs table and merge into cached settings
+   */
+  public async syncFromSupabase(): Promise<void> {
+    if (!isSupabaseConfigured || this.isSupabaseSyncing) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    this.isSupabaseSyncing = true;
+    try {
+      const { data, error } = await client.from('store_configs').select('*');
+      if (error) {
+        console.error('[SystemSettingsService] Error fetching store_configs:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const currentSettings = this.cachedSettings || this.getSettings();
+        const updatedStores = { ...currentSettings.stores };
+
+        data.forEach((row) => {
+          const storeKey = row.store_type as 'groupbuy' | 'onhand' | 'moq';
+          if (!['groupbuy', 'onhand', 'moq'].includes(storeKey)) return;
+
+          const defaultStore = DEFAULT_SYSTEM_SETTINGS.stores[storeKey];
+          const currentStore = updatedStores[storeKey] || defaultStore;
+
+          let jsonConfig: Partial<StoreConfig> = {};
+          if (row.schedule_config_jsonb && typeof row.schedule_config_jsonb === 'object') {
+            jsonConfig = row.schedule_config_jsonb as Partial<StoreConfig>;
+          }
+
+          updatedStores[storeKey] = {
+            ...defaultStore,
+            ...currentStore,
+            ...jsonConfig,
+            name: row.display_name || jsonConfig.name || currentStore.name || defaultStore.name,
+            availability: {
+              ...defaultStore.availability,
+              ...currentStore.availability,
+              ...(jsonConfig.availability || {}),
+              manualStatus: (row.status_override as 'OPEN' | 'CLOSED') || currentStore.availability?.manualStatus || 'OPEN',
+              openCloseControlEnabled: row.schedule_enabled ?? currentStore.availability?.openCloseControlEnabled ?? true,
+            },
+          };
+        });
+
+        this.cachedSettings = {
+          ...currentSettings,
+          stores: updatedStores,
+        };
+        this.saveToStorage(this.cachedSettings);
+        this.notifyListeners(this.cachedSettings);
+      } else {
+        // Seed default store configurations to Supabase if table is empty
+        const currentSettings = this.cachedSettings || this.getSettings();
+        const storeKeys: Array<'groupbuy' | 'onhand' | 'moq'> = ['groupbuy', 'onhand', 'moq'];
+        for (const storeKey of storeKeys) {
+          if (currentSettings.stores[storeKey]) {
+            await this.saveStoreConfigToSupabase(storeKey, currentSettings.stores[storeKey]);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[SystemSettingsService] Exception during syncFromSupabase:', err);
+    } finally {
+      this.isSupabaseSyncing = false;
+      this.isSupabaseInitialized = true;
+    }
+  }
+
+  /**
+   * Asynchronously upsert a single store configuration into Supabase store_configs table
+   */
+  private async saveStoreConfigToSupabase(
+    storeType: 'groupbuy' | 'onhand' | 'moq',
+    config: StoreConfig
+  ): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
 
     try {
-      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as SystemSettings;
-        // Deep merge with defaults to ensure any newly added setting keys exist
-        this.cachedSettings = this.mergeWithDefaults(parsed);
-        return this.cachedSettings;
+      let updatedBy: string | null = 'Admin User';
+      const { data: { session } } = await client.auth.getSession();
+      if (session?.user?.email) {
+        updatedBy = session.user.email;
+      } else if (session?.user?.id) {
+        updatedBy = session.user.id;
       }
-    } catch (error) {
-      console.error('[SystemSettingsService] Error reading settings from localStorage:', error);
-    }
 
-    this.cachedSettings = { ...DEFAULT_SYSTEM_SETTINGS };
-    this.saveToStorage(this.cachedSettings);
-    return this.cachedSettings;
+      const payload = {
+        store_type: storeType,
+        display_name: config.name || `${storeType.toUpperCase()} Store`,
+        status_override: (config.availability?.manualStatus === 'CLOSED' ? 'CLOSED' : 'OPEN') as 'OPEN' | 'CLOSED',
+        schedule_enabled: Boolean(config.availability?.openCloseControlEnabled ?? true),
+        schedule_config_jsonb: config as unknown as Json,
+        updated_at: new Date().toISOString(),
+        updated_by: updatedBy,
+      };
+
+      const { error } = await client
+        .from('store_configs')
+        .upsert(payload, { onConflict: 'store_type' });
+
+      if (error) {
+        console.error(`[SystemSettingsService] Error saving store_config for ${storeType}:`, error);
+      }
+    } catch (err) {
+      console.error(`[SystemSettingsService] Failed to save store_config for ${storeType}:`, err);
+    }
   }
 
   /**
@@ -96,6 +218,17 @@ class SystemSettingsService {
     this.cachedSettings = updated;
     this.saveToStorage(updated);
     this.notifyListeners(updated);
+
+    // If store configs were updated, persist ONLY those modified store records to Supabase store_configs table
+    if (updates.stores && isSupabaseConfigured) {
+      const storeKeys = Object.keys(updates.stores) as Array<'groupbuy' | 'onhand' | 'moq'>;
+      storeKeys.forEach((storeKey) => {
+        if (['groupbuy', 'onhand', 'moq'].includes(storeKey) && updated.stores[storeKey]) {
+          this.saveStoreConfigToSupabase(storeKey, updated.stores[storeKey]);
+        }
+      });
+    }
+
     return updated;
   }
 
@@ -111,6 +244,13 @@ class SystemSettingsService {
     this.cachedSettings = reset;
     this.saveToStorage(reset);
     this.notifyListeners(reset);
+
+    if (isSupabaseConfigured) {
+      (['groupbuy', 'onhand', 'moq'] as const).forEach((storeKey) => {
+        this.saveStoreConfigToSupabase(storeKey, reset.stores[storeKey]);
+      });
+    }
+
     return reset;
   }
 
@@ -131,6 +271,15 @@ class SystemSettingsService {
       this.cachedSettings = merged;
       this.saveToStorage(merged);
       this.notifyListeners(merged);
+
+      if (isSupabaseConfigured && merged.stores) {
+        (['groupbuy', 'onhand', 'moq'] as const).forEach((storeKey) => {
+          if (merged.stores[storeKey]) {
+            this.saveStoreConfigToSupabase(storeKey, merged.stores[storeKey]);
+          }
+        });
+      }
+
       return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'JSON parse error';
@@ -284,3 +433,4 @@ class SystemSettingsService {
 }
 
 export const systemSettingsService = new SystemSettingsService();
+
