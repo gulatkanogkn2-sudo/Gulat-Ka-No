@@ -15,6 +15,7 @@ import { OrderManagementService } from './orderManagementService';
 import { convertUsdToPhp } from '../utils/currencyUtils';
 import { ShippingFeeEngine } from './shippingFeeEngine';
 import { calculateTotalVials, calculateTotalKits } from '../utils/vialCalculation';
+import { createProductionOrder } from './productionService';
 
 /**
  * Generate a crisp SVG QR code Data URI with brand accents
@@ -471,7 +472,9 @@ export class CheckoutService {
    * Simulates processing order submission and generating store-specific reference number
    */
   static async submitOrder(payload: OrderSubmissionPayload): Promise<OrderSubmissionResult> {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    return createProductionOrder(payload, payload.paymentProofFile || null);
+
+    /* Legacy local adapter retained below for UI reference only; production returns above. */
 
     // Validate MOQ and Order Step for each item
     for (const item of payload.items || []) {

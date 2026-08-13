@@ -137,11 +137,13 @@ export interface OrderSubmissionPayload {
   customerInfo: CustomerInfo;
   shippingAddress: ShippingAddress;
   paymentMethodId: PaymentMethodId;
+  paymentProofFile?: File | null;
   paymentProofUrl?: string;
   orderNotes?: string;
   items: Array<{
     id: string;
     productId: string;
+    variantId?: string;
     name: string;
     variantLabel: string;
     quantity: number;

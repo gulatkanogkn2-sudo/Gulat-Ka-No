@@ -15,7 +15,7 @@ export const TrackingSearch: React.FC<TrackingSearchProps> = ({
   onSearch,
   isLoading = false,
   initialValue = '',
-  recentReferences = ['GB-000001', 'OH-000001', 'MOQ-000001'],
+  recentReferences = [],
   className = '',
 }) => {
   const [referenceInput, setReferenceInput] = useState(initialValue);
@@ -27,7 +27,7 @@ export const TrackingSearch: React.FC<TrackingSearchProps> = ({
 
     const clean = referenceInput.trim();
     if (!clean) {
-      setError('Please enter a valid order reference code (e.g. GB-000001, OH-000001, MOQ-000001).');
+      setError('Please enter a valid GKN order reference code.');
       return;
     }
 
@@ -44,7 +44,7 @@ export const TrackingSearch: React.FC<TrackingSearchProps> = ({
           Track Research Allocation & Waybill Status
         </h2>
         <p className="text-xs text-slate-300">
-          Enter your order reference number (e.g. GB-000001, OH-000001, MOQ-000001) or tracking hash to view real-time batch staging, shipment status, and courier dispatch.
+          Enter your GKN order reference number to view real-time batch staging, shipment status, and courier dispatch.
         </p>
       </div>
 
@@ -54,7 +54,7 @@ export const TrackingSearch: React.FC<TrackingSearchProps> = ({
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00D9FF]" />
             <input
               type="text"
-              placeholder="e.g. GB-000001, OH-000001, or MOQ-000001"
+              placeholder="e.g. GKN-20260813-000001"
               value={referenceInput}
               onChange={(e) => {
                 setReferenceInput(e.target.value);

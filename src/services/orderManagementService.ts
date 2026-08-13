@@ -8,6 +8,7 @@ import {
   AdminOrderNote,
 } from '../types/order';
 import { calculateTotalVials, calculateTotalLabels, calculateItemVials } from '../utils/vialCalculation';
+import { fetchOrders, updateProductionOrderStatus } from './productionService';
 
 // Default mock orders database for Admin Order Management workspace
 let ADMIN_MOCK_ORDERS: OrderDetail[] = [
@@ -752,11 +753,15 @@ export class OrderManagementService {
     totalPages: number;
     currentPage: number;
   }> {
-    // Simulate slight network delay
-    await new Promise((res) => setTimeout(res, 100));
-    OrderManagementService.initializeOrders();
-
-    const filtered = OrderManagementService.filterOrdersUnpaginated(filters);
+    let filtered = await fetchOrders();
+    if (filters.searchQuery?.trim()) {
+      const q = filters.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((order) => [order.referenceNumber, order.customerName, order.customerEmail, order.customerPhone].some((value) => (value || '').toLowerCase().includes(q)) || order.items.some((item) => item.name.toLowerCase().includes(q)));
+    }
+    if (filters.storeFilter && filters.storeFilter !== 'all') filtered = filtered.filter((order) => order.storeType === filters.storeFilter);
+    if (filters.orderStatusFilter && filters.orderStatusFilter !== 'all') filtered = filtered.filter((order) => order.status === filters.orderStatusFilter);
+    if (filters.paymentStatusFilter && filters.paymentStatusFilter !== 'all') filtered = filtered.filter((order) => order.paymentStatus === filters.paymentStatusFilter);
+    if (filters.shippingStatusFilter && filters.shippingStatusFilter !== 'all') filtered = filtered.filter((order) => order.shippingStatus === filters.shippingStatusFilter);
 
     const page = filters.page || 1;
     const pageSize = filters.pageSize || 10;
@@ -889,9 +894,8 @@ export class OrderManagementService {
    * Get order by ID or Reference Code
    */
   static async getOrderById(idOrRef: string): Promise<OrderDetail | null> {
-    await new Promise((res) => setTimeout(res, 100));
     const target = idOrRef.trim().toLowerCase();
-    const found = ADMIN_MOCK_ORDERS.find(
+    const found = (await fetchOrders()).find(
       (o) => o.id.toLowerCase() === target || o.referenceNumber.toLowerCase() === target
     );
     return found ? { ...found } : null;
@@ -967,7 +971,7 @@ export class OrderManagementService {
       updates.adminNotes = adminNoteText;
     }
 
-    return OrderManagementService.updateOrder(id, updates);
+    return updateProductionOrderStatus(id, newStatus);
   }
 
   /**

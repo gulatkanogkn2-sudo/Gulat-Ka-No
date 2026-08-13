@@ -1,5 +1,6 @@
 import { OrderDetail, OrderStatus, TimelineStep } from '../types/order';
 import { TimelineConfigService } from './timelineConfigService';
+import { fetchOrders } from './productionService';
 
 export const MOCK_ORDERS: OrderDetail[] = [
   {
@@ -202,74 +203,14 @@ export class OrderService {
    * If code is not in mock list, checks if it follows GKN reference format and generates a live staged order record.
    */
   static async getOrderByReference(referenceNumber: string): Promise<OrderDetail | null> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    const cleanRef = referenceNumber.trim().toUpperCase();
-
-    // Check exact match in mock database
-    const found = MOCK_ORDERS.find(
-      (o) => o.referenceNumber.toUpperCase() === cleanRef || o.id.toUpperCase() === cleanRef
-    );
-
-    if (found) {
-      return found;
-    }
-
-    // If it's a freshly generated checkout reference format like GKN-2026-XXXXXX
-    if (cleanRef.startsWith('GKN-')) {
-      return {
-        id: `ord_${Date.now()}`,
-        referenceNumber: cleanRef,
-        storeType: 'groupbuy',
-        orderDate: new Date().toISOString(),
-        status: 'PAYMENT_VERIFICATION',
-        paymentStatus: 'VERIFICATION_PENDING',
-        paymentMethod: 'GCash / Wire Instant Settlement',
-        customerName: 'Dr. Alexander Vance',
-        customerEmail: 'alexander.vance@gknlabs.org',
-        shippingAddress: {
-          recipientName: 'Dr. Alexander Vance',
-          phone: '+63 917 123 4567',
-          addressLine1: 'Suite 402, BioTech Innovation Tower',
-          addressLine2: '32nd Street, Bonifacio Global City',
-          city: 'Taguig City',
-          province: 'Metro Manila',
-          postalCode: '1634',
-          country: 'Philippines',
-        },
-        items: [
-          {
-            id: 'item_dynamic_1',
-            productId: 'semaglutide-5mg',
-            name: 'Semaglutide 5mg Standard Vial',
-            variantLabel: 'Box of 10 Vials (Lyophilized)',
-            quantity: 1,
-            price: 249.99,
-            storeType: 'groupbuy',
-            purity: '99.4%',
-            casNumber: '910463-68-2',
-          },
-        ],
-        subtotal: 249.99,
-        shippingFee: 15.0,
-        discount: 0.0,
-        grandTotal: 264.99,
-        trackingNumber: 'PENDING_ASSIGNMENT',
-        courier: 'LBC Express',
-        estimatedDelivery: '24-48 Hours Post Verification',
-        orderNotes: 'Newly submitted order via GKN Checkout.',
-      };
-    }
-
-    return null;
+    return (await fetchOrders(referenceNumber))[0] || null;
   }
 
   /**
    * Retrieves recent orders for the customer
    */
   static async getRecentOrders(email?: string): Promise<OrderDetail[]> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return MOCK_ORDERS;
+    return fetchOrders();
   }
 
   /**

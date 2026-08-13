@@ -15,14 +15,17 @@ import { UserProfile } from '../types';
  */
 
 // Detect if application is running in Vite/Node development mode
-export const IS_DEV_MODE: boolean = Boolean(import.meta.env.DEV) || process.env.NODE_ENV !== 'production';
+export const IS_DEV_MODE: boolean =
+  Boolean(import.meta.env.DEV) &&
+  !Boolean(import.meta.env.PROD) &&
+  import.meta.env.VITE_ENABLE_DEV_AUTH_BYPASS === 'true';
 
 // In-Memory Development Owner account
 export const DEV_OWNER_USER: UserProfile = {
   id: 'dev-owner-in-memory-id',
   email: 'development@gkn.local',
   fullName: 'Development Owner',
-  role: 'owner',
+  role: 'OWNER',
   createdAt: new Date().toISOString(),
 };
 

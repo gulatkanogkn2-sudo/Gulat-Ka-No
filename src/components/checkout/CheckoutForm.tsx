@@ -7,7 +7,8 @@ import {
   PaymentProofFile,
   StoreType,
 } from '../../types/checkout';
-import { getCheckoutPaymentMethods, DEFAULT_CUSTOMER_FIELDS } from '../../services/checkoutService';
+import { DEFAULT_CUSTOMER_FIELDS } from '../../services/checkoutService';
+import { CheckoutAccessory } from '../../types/checkout';
 import { AddressSelector } from './AddressSelector';
 import { PaymentMethodCard } from './PaymentMethodCard';
 import { PaymentUploader } from './PaymentUploader';
@@ -20,7 +21,7 @@ interface CheckoutFormProps {
   onCustomerInfoChange: (info: CustomerInfo) => void;
   selectedAddress: ShippingAddress;
   onAddressChange: (address: ShippingAddress) => void;
-  selectedPaymentMethod: PaymentMethodOption;
+  selectedPaymentMethod: PaymentMethodOption | null;
   onPaymentMethodChange: (method: PaymentMethodOption) => void;
   paymentProof: PaymentProofFile;
   onPaymentProofChange: (proof: PaymentProofFile) => void;
@@ -32,6 +33,9 @@ interface CheckoutFormProps {
   onAccessoryQuantityChange: (accessoryId: string, quantity: number) => void;
   onOpenQrModal: (method: PaymentMethodOption) => void;
   validationError: string | null;
+  paymentMethods?: PaymentMethodOption[];
+  savedAddresses?: ShippingAddress[];
+  accessories?: CheckoutAccessory[];
   className?: string;
 }
 
@@ -53,6 +57,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   onAccessoryQuantityChange,
   onOpenQrModal,
   validationError,
+  paymentMethods = [],
+  savedAddresses = [],
+  accessories = [],
   className = '',
 }) => {
   const handleCustomerFieldChange = (field: string, value: string) => {
@@ -119,6 +126,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       <AddressSelector
         selectedAddress={selectedAddress}
         onChange={onAddressChange}
+        savedAddresses={savedAddresses}
       />
 
       {/* 3. Settlement & Payment Method Selection */}
@@ -132,12 +140,12 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         </div>
 
         <div className="space-y-3">
-          {getCheckoutPaymentMethods().length === 0 ? (
+          {paymentMethods.length === 0 ? (
             <div className="p-4 rounded-xl bg-slate-900 border border-white/10 text-slate-400 text-xs font-mono text-center">
               No active payment methods available. Please contact support or administrator.
             </div>
           ) : (
-            getCheckoutPaymentMethods().map((method) => (
+            paymentMethods.map((method) => (
               <PaymentMethodCard
                 key={method.id}
                 method={method}
@@ -152,6 +160,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
       {/* 4. Accessories Selector */}
       <AccessoriesSelector
+        accessories={accessories}
         storeType={storeType}
         totalVialsCount={totalVialsCount}
         totalKitsCount={totalKitsCount}
