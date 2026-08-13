@@ -122,7 +122,7 @@ const DEFAULT_STORE_CONFIGS: Record<string, TimelineStageConfig[]> = {
       displayOrder: 5,
       enabled: true,
       icon: 'Truck',
-      description: 'In transit with courier tracking number.',
+      description: 'Fulfillment is marked in transit. Courier details appear when assigned.',
       associatedStatus: 'SHIPPED',
     },
     {
@@ -377,3 +377,4 @@ export class TimelineConfigService {
     });
   }
 }
+
