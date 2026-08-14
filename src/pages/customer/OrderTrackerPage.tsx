@@ -42,7 +42,7 @@ export const OrderTrackerPage: React.FC = () => {
   return (
     <PageContainer
       title="Order Tracker"
-      description="Track research allocation progress, batch threshold funding, and shipment status."
+      description="Track order progress, payment status, and shipment status."
       actions={
         <Badge variant="cyan" glow>
           LIVE VERIFICATION SYSTEM
@@ -77,3 +77,4 @@ export const OrderTrackerPage: React.FC = () => {
     </PageContainer>
   );
 };
+
