@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { APP_CONFIG } from '../../app/config';
 import { staticPagesService, StaticPage } from '../../services/staticPagesService';
 import { systemSettingsService } from '../../services/systemSettingsService';
-import { Send, Mail, MessageCircle, Globe } from 'lucide-react';
 
 // Footer description text (set to empty string to hide underneath branding)
 const FOOTER_DESCRIPTION = "";
@@ -36,7 +35,7 @@ export const CustomerFooter: React.FC = () => {
     <footer className="bg-transparent border-t border-[#00D9FF]/20 py-12 mt-16 relative z-10 text-slate-400">
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00D9FF]/50 to-transparent"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10">
           {/* Brand & Overview */}
           <div className="space-y-4 lg:col-span-1">
             <div className="flex flex-col">
@@ -128,32 +127,12 @@ export const CustomerFooter: React.FC = () => {
             </ul>
           </div>
 
-          {/* CONNECT */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
-              CONNECT
-            </h4>
-            <div className="flex items-center space-x-3">
-              <a href="#" className="w-8 h-8 rounded-full bg-[#00D9FF]/10 flex items-center justify-center text-[#00D9FF] hover:bg-[#00D9FF] hover:text-black transition-colors shadow-[0_0_10px_rgba(0,217,255,0.2)]">
-                <Send size={14} />
-              </a>
-              <a href={`mailto:${APP_CONFIG.supportEmail}`} className="w-8 h-8 rounded-full bg-[#00D9FF]/10 flex items-center justify-center text-[#00D9FF] hover:bg-[#00D9FF] hover:text-black transition-colors shadow-[0_0_10px_rgba(0,217,255,0.2)]">
-                <Mail size={14} />
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-[#00D9FF]/10 flex items-center justify-center text-[#00D9FF] hover:bg-[#00D9FF] hover:text-black transition-colors shadow-[0_0_10px_rgba(0,217,255,0.2)]">
-                <MessageCircle size={14} />
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-[#00D9FF]/10 flex items-center justify-center text-[#00D9FF] hover:bg-[#00D9FF] hover:text-black transition-colors shadow-[0_0_10px_rgba(0,217,255,0.2)]">
-                <Globe size={14} />
-              </a>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Legal */}
         <div className="pt-6 mt-4 border-t border-white/5 flex flex-col items-center justify-center text-xs">
           <p className="text-slate-500 font-mono text-[11px] mb-2">
-            © {new Date().getFullYear()} {companyName} ({brandName}). All rights reserved.
+            Â© {new Date().getFullYear()} {companyName} ({brandName}). All rights reserved.
           </p>
           <div className="w-[100px] h-[3px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent mt-2 rounded-full opacity-50"></div>
         </div>
@@ -161,3 +140,4 @@ export const CustomerFooter: React.FC = () => {
     </footer>
   );
 };
+
