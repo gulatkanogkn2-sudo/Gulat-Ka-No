@@ -77,7 +77,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
               <th className="py-3 px-3 whitespace-nowrap">Customer ID / Code</th>
               <th className="py-3 px-3 min-w-[200px]">Name & Institution</th>
               <th className="py-3 px-3 text-center whitespace-nowrap">Orders</th>
-              <th className="py-3 px-3 text-right whitespace-nowrap">Qualifying Spending (₱)</th>
+              <th className="py-3 px-3 text-right whitespace-nowrap">Qualifying Spending (â‚±)</th>
               <th className="py-3 px-3 whitespace-nowrap">Account Status</th>
               <th className="py-3 px-3 whitespace-nowrap">Tier</th>
               <th className="py-3 px-3 whitespace-nowrap">KYC Verification</th>
@@ -155,7 +155,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                             </div>
                           ) : (
                             <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                              Individual Researcher
+                              Individual Customer
                             </div>
                           )}
                         </div>
@@ -170,9 +170,9 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Qualifying Spending (PHP ₱) */}
+                    {/* Qualifying Spending (PHP â‚±) */}
                     <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400 align-middle whitespace-nowrap">
-                      ₱
+                      â‚±
                       {qualifyingSpend.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
@@ -295,4 +295,5 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
     </div>
   );
 };
+
 
