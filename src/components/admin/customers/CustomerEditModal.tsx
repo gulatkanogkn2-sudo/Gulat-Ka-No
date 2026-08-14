@@ -152,38 +152,6 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
 
             <div>
               <label className="block text-slate-300 uppercase tracking-wider mb-1 font-semibold">
-                Customer Tier
-              </label>
-              <select
-                value={tier}
-                onChange={(e) => {
-                  setTier(e.target.value as CustomerTier);
-                  setIsManualTierOverride(true);
-                }}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-amber-500"
-              >
-                <option value="STANDARD">STANDARD</option>
-                <option value="SILVER">SILVER</option>
-                <option value="GOLD">GOLD</option>
-                <option value="VIP">VIP</option>
-              </select>
-              <label className="flex items-center gap-2 mt-2 text-[11px] text-amber-400 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isManualTierOverride || tier === 'OWNER'}
-                  disabled={tier === 'OWNER'}
-                  onChange={(e) => setIsManualTierOverride(e.target.checked)}
-                  className="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-0"
-                />
-                <span>Lock Tier (Manual Override)</span>
-              </label>
-              <p className="text-[10px] text-slate-500 font-mono mt-1">
-                Prevents automated tier recalculation from modifying this customer.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-slate-300 uppercase tracking-wider mb-1 font-semibold">
                 Verification Status
               </label>
               <select

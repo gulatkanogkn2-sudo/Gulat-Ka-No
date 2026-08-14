@@ -35,18 +35,16 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
           <SettingInput
             label="Website Title Name"
-            value="GKN V2"
-            onChange={() => undefined}
-            disabled
-            helperText="Permanent project identity. Browser metadata can be edited in Website Manager."
+            value={settings.websiteName}
+            onChange={(val) => handleChange('websiteName', val)}
+            helperText="Display name shown in browser metadata and storefront surfaces."
             error={errors.websiteName}
           />
           <SettingInput
             label="Brand Trademark Identifier"
-            value="GKN V2"
-            onChange={() => undefined}
-            disabled
-            helperText="Permanent GKN V2 identifier used in headers and navigation."
+            value={settings.brandName}
+            onChange={(val) => handleChange('brandName', val)}
+            helperText="Display brand shown in headers, navigation, and customer pages."
             error={errors.brandName}
           />
           <SettingInput
