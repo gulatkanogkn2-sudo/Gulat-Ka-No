@@ -127,8 +127,10 @@ export const CustomerLayout: React.FC = () => {
 
       {/* Main Content Container with Background Ambient Orbs */}
       <main className="flex-1 relative">
-        <div className="absolute top-12 left-1/4 w-96 h-96 bg-[#00D9FF]/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute top-64 right-1/4 w-96 h-96 bg-[#8B5CF6]/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="absolute top-12 left-1/4 w-96 h-96 bg-[#00D9FF]/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-64 right-1/4 w-96 h-96 bg-[#8B5CF6]/5 rounded-full blur-3xl"></div>
+        </div>
 
         <Outlet />
       </main>
