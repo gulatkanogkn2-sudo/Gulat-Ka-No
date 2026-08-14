@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { APP_CONFIG } from '../../app/config';
 import { staticPagesService, StaticPage } from '../../services/staticPagesService';
 import { systemSettingsService } from '../../services/systemSettingsService';
+import { WebsiteManagerService } from '../../services/websiteManagerService';
 
 // Footer description text (set to empty string to hide underneath branding)
 const FOOTER_DESCRIPTION = "";
@@ -11,6 +12,7 @@ export const CustomerFooter: React.FC = () => {
   const [staticPages, setStaticPages] = useState<StaticPage[]>([]);
   const [brandName, setBrandName] = useState(() => systemSettingsService.getSettings()?.general?.brandName || APP_CONFIG.name);
   const [companyName, setCompanyName] = useState(() => systemSettingsService.getSettings()?.general?.companyName || APP_CONFIG.name);
+  const [websiteBrandName, setWebsiteBrandName] = useState('');
 
   useEffect(() => {
     const unsubscribePages = staticPagesService.subscribe((pages) => {
@@ -21,10 +23,15 @@ export const CustomerFooter: React.FC = () => {
       if (sys.general?.brandName) setBrandName(sys.general.brandName);
       if (sys.general?.companyName) setCompanyName(sys.general.companyName);
     });
+    WebsiteManagerService.getWebsiteConfig().then((config) => setWebsiteBrandName(config.branding?.brandName || ''));
+    const unsubscribeWebsite = WebsiteManagerService.subscribeToConfigUpdates((config) => {
+      setWebsiteBrandName(config.branding?.brandName || '');
+    });
 
     return () => {
       unsubscribePages();
       unsubscribeSys();
+      unsubscribeWebsite();
     };
   }, []);
 
@@ -40,7 +47,7 @@ export const CustomerFooter: React.FC = () => {
           <div className="space-y-4 lg:col-span-1">
             <div className="flex flex-col">
               <span className="font-black italic text-[#00D9FF] text-3xl drop-shadow-[0_0_10px_rgba(0,217,255,0.5)] tracking-tight">
-                {brandName}
+                {websiteBrandName || brandName}
               </span>
               <span className="text-[10px] text-[#FF2ED1] font-mono tracking-widest uppercase drop-shadow-[0_0_5px_rgba(255,46,209,0.4)]">
                 {APP_CONFIG.tagline}
@@ -132,7 +139,7 @@ export const CustomerFooter: React.FC = () => {
         {/* Bottom Legal */}
         <div className="pt-6 mt-4 border-t border-white/5 flex flex-col items-center justify-center text-xs">
           <p className="text-slate-500 font-mono text-[11px] mb-2">
-            {'\u00A9'} {new Date().getFullYear()} {companyName} ({brandName}). All rights reserved.
+            {'\u00A9'} {new Date().getFullYear()} {companyName} ({websiteBrandName || brandName}). All rights reserved.
           </p>
           <div className="w-[100px] h-[3px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent mt-2 rounded-full opacity-50"></div>
         </div>
