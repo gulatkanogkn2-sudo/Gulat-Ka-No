@@ -8,6 +8,7 @@ import {
   AdminSystemHealth,
 } from '../types/admin';
 import { financeService } from './financeService';
+import { getSupabaseClient } from '../lib/supabase';
 
 let currentAlerts: AdminAlertItem[] = [
   {
@@ -24,7 +25,7 @@ let currentAlerts: AdminAlertItem[] = [
     id: 'alt-2',
     type: 'New Order',
     title: 'New Order #GKN-8924',
-    description: 'Order placed for Tirzepatide 10mg Box & BPC-157 Vials (₱24,500.00).',
+    description: 'Order placed for Tirzepatide 10mg Box & BPC-157 Vials (â‚±24,500.00).',
     timestamp: '25 mins ago',
     isRead: false,
     linkPath: '/admin/orders',
@@ -92,7 +93,7 @@ const defaultSummaryMetrics: AdminSummaryMetric[] = [
     title: 'Pending Payments',
     subtitle: 'Awaiting verification',
     value: '14',
-    subValue: '₱242,500.00 unconfirmed',
+    subValue: 'â‚±242,500.00 unconfirmed',
     trend: { value: '-3 items', isPositive: true, period: 'since yesterday' },
     iconName: 'CreditCard',
     accent: 'amber',
@@ -146,7 +147,7 @@ const defaultSummaryMetrics: AdminSummaryMetric[] = [
     id: 'revenue-summary',
     title: 'Revenue Summary',
     subtitle: 'Gross sales & revenue',
-    value: '₱1,245,800',
+    value: 'â‚±1,245,800',
     subValue: 'Primary revenue tracker',
     trend: { value: '+18.6%', isPositive: true, period: 'vs target' },
     iconName: 'DollarSign',
@@ -157,7 +158,7 @@ const defaultSummaryMetrics: AdminSummaryMetric[] = [
     id: 'recent-expenses',
     title: 'Recent Expenses',
     subtitle: 'Recorded business expenses',
-    value: '₱46,910',
+    value: 'â‚±46,910',
     subValue: 'Shipping, packaging & fees',
     trend: { value: 'Managed', isPositive: true, period: 'recorded' },
     iconName: 'TrendingDown',
@@ -264,7 +265,7 @@ const defaultRecentActivities: AdminActivityItem[] = [
     id: 'act-101',
     eventType: 'New Order',
     title: 'New Research Order #GKN-8924 Placed',
-    detail: 'Order for 1x Tirzepatide 10mg Box & 2x BPC-157 Vials (₱24,500.00)',
+    detail: 'Order for 1x Tirzepatide 10mg Box & 2x BPC-157 Vials (â‚±24,500.00)',
     timestamp: '5 minutes ago',
     actor: 'Dr. Sarah Lin',
     status: 'info',
@@ -274,7 +275,7 @@ const defaultRecentActivities: AdminActivityItem[] = [
     id: 'act-102',
     eventType: 'Payment Uploaded',
     title: 'USDT Crypto Payment Proof Uploaded',
-    detail: 'TxID: 0x8aef...41b2 attached to Order #GKN-8919 (₱12,500.00)',
+    detail: 'TxID: 0x8aef...41b2 attached to Order #GKN-8919 (â‚±12,500.00)',
     timestamp: '18 minutes ago',
     actor: 'Research Lab #402',
     status: 'warning',
@@ -354,7 +355,7 @@ const defaultSystemHealth: AdminSystemHealth = {
     appName: 'GKN V2 Operations Suite',
     version: '2.0.0-foundation',
     buildEnvironment: 'Production Cloud Container',
-    lastDeployed: 'Aug 05, 2026 – 02:45 UTC',
+    lastDeployed: 'Aug 05, 2026 â€“ 02:45 UTC',
   },
 };
 
@@ -382,7 +383,7 @@ export const AdminDashboardService = {
         if (m.id === 'revenue-summary') {
           return {
             ...m,
-            value: `₱${Math.round(finData.overview.totalRevenuePhp).toLocaleString('en-US')}`,
+            value: `â‚±${Math.round(finData.overview.totalRevenuePhp).toLocaleString('en-US')}`,
             subValue: `$${Math.round(finData.overview.totalRevenueUsd).toLocaleString('en-US')} USD revenue`,
             path: '/admin/finance?tab=overview',
           };
@@ -390,7 +391,7 @@ export const AdminDashboardService = {
         if (m.id === 'recent-expenses') {
           return {
             ...m,
-            value: `₱${Math.round(finData.overview.totalExpensesPhp).toLocaleString('en-US')}`,
+            value: `â‚±${Math.round(finData.overview.totalExpensesPhp).toLocaleString('en-US')}`,
             subValue: `$${Math.round(finData.overview.totalExpensesUsd).toLocaleString('en-US')} USD recorded expenses`,
             path: '/admin/finance?tab=expenses',
           };
@@ -401,12 +402,37 @@ export const AdminDashboardService = {
       console.error('[AdminDashboardService] Error fetching finance overview:', err);
     }
 
+    try {
+      const client = getSupabaseClient() as any;
+      if (client) {
+        const [ordersResult, paymentsResult, customersResult] = await Promise.all([
+          client.from('orders').select('id', { count: 'exact', head: true }),
+          client.from('payment_verifications').select('id', { count: 'exact', head: true }).eq('verification_status', 'PENDING'),
+          client.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'CUSTOMER'),
+        ]);
+        computedMetrics = computedMetrics.map((metric) => {
+          if (metric.id === 'total-orders') return { ...metric, value: String(ordersResult.count ?? 0), subValue: 'Live production orders', trend: undefined };
+          if (metric.id === 'pending-payments') return { ...metric, value: String(paymentsResult.count ?? 0), subValue: 'Awaiting verification', trend: undefined };
+          if (metric.id === 'total-customers') return { ...metric, value: String(customersResult.count ?? 0), subValue: 'Registered customer accounts', trend: undefined };
+          if (['active-groupbuy', 'onhand-inventory', 'moq-campaigns'].includes(metric.id)) {
+            return { ...metric, value: 'View', subValue: 'Open for live store data', trend: undefined };
+          }
+          return { ...metric, trend: undefined };
+        });
+      }
+    } catch (err) {
+      console.error('[AdminDashboardService] Error fetching live dashboard counts:', err);
+    }
+
     return {
       header: { ...currentHeaderData },
       metrics: computedMetrics,
-      quickActions: [...defaultQuickActions],
-      activities: [...defaultRecentActivities],
-      alerts: [...currentAlerts],
+      quickActions: defaultQuickActions.map((action) => ({
+        ...action,
+        badge: ['action-orders', 'action-customers'].includes(action.id) ? 'Live' : action.badge,
+      })),
+      activities: [],
+      alerts: [],
       systemHealth: { ...defaultSystemHealth },
     };
   },
@@ -469,4 +495,5 @@ export const AdminDashboardService = {
     return { ...currentHeaderData };
   },
 };
+
 
