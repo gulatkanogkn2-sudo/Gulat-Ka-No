@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ActionMenu } from '../../common/ActionMenu';
 import { MediaAssetItem } from '../../../types/mediaLibrary';
+import { MediaThumbnail } from './MediaThumbnail';
 
 interface MediaTableProps {
   assets: MediaAssetItem[];
@@ -47,7 +48,7 @@ export const MediaTable: React.FC<MediaTableProps> = ({
     if (isImage) {
       return (
         <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden relative group-hover:border-cyan-500/50 transition-colors flex-shrink-0">
-          <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
+          <MediaThumbnail src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
         </div>
       );
     }
@@ -233,3 +234,4 @@ export const MediaTable: React.FC<MediaTableProps> = ({
     </div>
   );
 };
+

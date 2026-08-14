@@ -50,7 +50,7 @@ export const OrderReceiptModal: React.FC<OrderReceiptModalProps> = ({ order, onC
               </span>
             </div>
             <p className="text-[11px] text-slate-400 truncate hidden sm:block">
-              GKN â€¢ Official Order Record
+              GKN • Official Order Record
             </p>
           </div>
         </div>

@@ -343,7 +343,7 @@ export const PrintPackingSlipModal: React.FC<PrintPackingSlipModalProps> = ({
           <div className="flex items-start justify-between border-b border-slate-800 print:border-black pb-4">
             <div>
               <div className="text-xl font-extrabold tracking-wider text-cyan-400 print:text-black">
-                GKN V2 LABS
+                GKN
               </div>
               <p className="text-xs text-slate-400 print:text-gray-600">
                 Precision Research Compounds & Express Logistics
@@ -559,3 +559,4 @@ export const PrintShippingLabelModal: React.FC<PrintShippingLabelModalProps> = (
     </div>
   );
 };
+

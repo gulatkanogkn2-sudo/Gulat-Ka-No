@@ -219,7 +219,7 @@ export const AdminOrdersPage: React.FC = () => {
               Order Management
             </h1>
             <span className="px-2.5 py-0.5 bg-cyan-950/70 border border-cyan-500/40 text-cyan-400 text-xs font-mono font-semibold rounded">
-              Module 4.3
+              Orders
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
@@ -376,4 +376,5 @@ export const AdminOrdersPage: React.FC = () => {
     </div>
   );
 };
+
 

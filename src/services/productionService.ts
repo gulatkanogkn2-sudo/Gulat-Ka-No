@@ -206,11 +206,11 @@ export async function fetchProductionPayments(): Promise<any[]> {
       id: row.id, paymentReference: row.reference_number || row.id.slice(0, 8).toUpperCase(), orderNumber: order.order_number,
       orderId: order.id, customerId: order.customer_id, customerName: order.customer_name, customerEmail: order.customer_email || '',
       customerPhone: order.customer_phone || '', storeType: order.store_type, paymentMethod: order.payment_method_snapshot?.methodType || 'OTHER',
-      amountPaid: convertPhpToUsd(Number(row.submitted_amount_php)), currency: 'USD', paymentDate: row.submitted_at,
+      amountPaid: Number(row.submitted_amount_php), currency: 'PHP', paymentDate: row.submitted_at,
       transactionReference: row.reference_number || '', verificationStatus: status, assignedVerifier: row.verified_by,
       lastUpdated: row.updated_at, uploadedProofUrl: proofUrl, uploadedProofFileName: row.proof_storage_path?.split('/').pop() || '',
       uploadedProofFileSize: '', verificationHistory: [], adminNotes: [], rejectionReason: row.rejection_reason,
-      associatedOrderStatus: order.status, orderTotalAmount: convertPhpToUsd(Number(order.grand_total_php)),
+      associatedOrderStatus: order.status, orderTotalAmount: Number(order.grand_total_php),
     };
   }));
 }
@@ -221,3 +221,4 @@ export async function fetchCustomers() {
   if (error) throw error;
   return data || [];
 }
+

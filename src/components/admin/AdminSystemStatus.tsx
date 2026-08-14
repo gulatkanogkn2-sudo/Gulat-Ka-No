@@ -196,7 +196,7 @@ export const AdminSystemStatus: React.FC<AdminSystemStatusProps> = ({
             </div>
             <div className="flex justify-between">
               <span>Core App:</span>
-              <strong className="text-amber-400">GKN V2 Master</strong>
+              <strong className="text-amber-400">GKN Production</strong>
             </div>
           </div>
         </div>
@@ -204,3 +204,4 @@ export const AdminSystemStatus: React.FC<AdminSystemStatusProps> = ({
     </Card>
   );
 };
+

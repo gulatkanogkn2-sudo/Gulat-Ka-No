@@ -29,7 +29,7 @@ export const OrderStatsHeader: React.FC<OrderStatsHeaderProps> = ({ orders }) =>
           <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
         </div>
         <div className="text-xl font-bold font-mono text-amber-300">{stats.pendingVerification}</div>
-        <div className="text-[10px] text-amber-400/70 font-mono mt-0.5">Module 4.5 Queue</div>
+        <div className="text-[10px] text-amber-400/70 font-mono mt-0.5">Payment Review Queue</div>
       </div>
 
       {/* Ready to Ship */}
@@ -80,4 +80,5 @@ export const OrderStatsHeader: React.FC<OrderStatsHeaderProps> = ({ orders }) =>
     </div>
   );
 };
+
 

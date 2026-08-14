@@ -440,7 +440,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
         {/* Footer info inside Drawer */}
         <div className="p-4 border-t border-white/10 bg-[#0A0F1D]/80 flex-shrink-0 text-center">
           <p className="text-[11px] font-mono text-slate-400">
-            {brandName} â€¢ Private Customer Hub
+            {brandName} • Private Customer Hub
           </p>
         </div>
       </div>

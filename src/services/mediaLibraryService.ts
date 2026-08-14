@@ -7,7 +7,7 @@ import {
   ExportFormat,
   SupportedFileType,
 } from '../types/mediaLibrary';
-import { supabaseUrl } from '../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured, supabaseUrl } from '../lib/supabase';
 import { readJsonCache, writeCompactJsonCache } from '../utils/safeLocalStorage';
 
 const STORAGE_KEY = 'gkn_media_library_v2';
@@ -89,7 +89,7 @@ export const INITIAL_MEDIA_ASSETS: MediaAssetItem[] = [
     tags: ['hero', 'lab', 'synthesizer', 'blue', 'homepage'],
     description: 'Primary homepage hero background showcasing automated peptide synthesis robotics.',
     altText: 'Automated peptide synthesis cleanroom equipment with neon cyan illumination',
-    seoTitle: 'GKN Homepage Hero Banner â€” Automated Cleanroom',
+    seoTitle: 'GKN Homepage Hero Banner — Automated Cleanroom',
     seoDescription: 'High purity peptide synthesis laboratory background asset.',
     usageCount: 2,
     usageReferences: [
@@ -263,7 +263,7 @@ export const INITIAL_MEDIA_ASSETS: MediaAssetItem[] = [
   {
     id: 'med-coa-01',
     name: 'coa-batch-9844-semaglutide-hplc.pdf',
-    title: 'HPLC & MS COA Report â€” Batch #9844 (Semaglutide 10mg)',
+    title: 'HPLC & MS COA Report — Batch #9844 (Semaglutide 10mg)',
     category: 'COA',
     fileType: 'PDF',
     mimeType: 'application/pdf',
@@ -291,7 +291,7 @@ export const INITIAL_MEDIA_ASSETS: MediaAssetItem[] = [
   {
     id: 'med-coa-02',
     name: 'coa-batch-7712-bpc157-mass-spec.pdf',
-    title: 'Mass Spectrometry COA Report â€” Batch #7712 (BPC-157 10mg)',
+    title: 'Mass Spectrometry COA Report — Batch #7712 (BPC-157 10mg)',
     category: 'COA',
     fileType: 'PDF',
     mimeType: 'application/pdf',
@@ -525,6 +525,85 @@ class MediaLibraryService {
     writeCompactJsonCache(STORAGE_KEY, this.assets);
   }
 
+  private formatBytes(bytes: number): string {
+    if (!bytes) return '0 KB';
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  private normalizeStoragePath(bucket: string, value?: string | null): string {
+    if (!value) return '';
+    const decoded = value.trim().replace(/^\/+/, '');
+    const abstractPrefix = `supabase://storage/${bucket}/`;
+    if (decoded.startsWith(abstractPrefix)) return decoded.slice(abstractPrefix.length);
+    const publicMarker = `/storage/v1/object/public/${bucket}/`;
+    const authenticatedMarker = `/storage/v1/object/authenticated/${bucket}/`;
+    const marker = decoded.includes(publicMarker) ? publicMarker : authenticatedMarker;
+    if (decoded.includes(marker)) return decodeURIComponent(decoded.split(marker)[1].split('?')[0]);
+    return decoded;
+  }
+
+  private async rowToAsset(row: any): Promise<MediaAssetItem> {
+    const client = getSupabaseClient();
+    const metadata = row.metadata_jsonb && typeof row.metadata_jsonb === 'object' ? row.metadata_jsonb : {};
+    const bucket = row.storage_bucket || 'gkn-media';
+    const objectPath = this.normalizeStoragePath(bucket, row.storage_path || row.public_url);
+    let resolvedUrl = row.public_url || '';
+
+    if (client && objectPath) {
+      if (bucket === 'gkn-media') {
+        resolvedUrl = client.storage.from(bucket).getPublicUrl(objectPath).data.publicUrl;
+      } else {
+        const signed = await client.storage.from(bucket).createSignedUrl(objectPath, 3600);
+        resolvedUrl = signed.data?.signedUrl || '';
+      }
+    }
+
+    const extension = String(row.file_name || row.name || '').split('.').pop()?.toUpperCase() || 'PNG';
+    const fileType = (['JPG', 'JPEG', 'PNG', 'WEBP', 'SVG', 'PDF', 'DOCX', 'XLSX', 'ZIP', 'ICO'].includes(extension)
+      ? extension
+      : 'PNG') as SupportedFileType;
+    const dimensions = row.width && row.height ? `${row.width}x${row.height} px` : (metadata.dimensions || 'N/A');
+    const references = Array.isArray(metadata.usageReferences) ? metadata.usageReferences : [];
+
+    return {
+      id: row.id,
+      name: row.file_name || row.name,
+      title: metadata.title || row.name,
+      category: (row.category || 'Other') as MediaCategory,
+      fileType,
+      mimeType: row.mime_type || 'application/octet-stream',
+      url: resolvedUrl,
+      storagePath: objectPath ? `supabase://storage/${bucket}/${objectPath}` : '',
+      dimensions,
+      resolution: metadata.resolution || 'N/A',
+      fileSize: this.formatBytes(Number(row.file_size_bytes || 0)),
+      fileSizeBytes: Number(row.file_size_bytes || 0),
+      uploadDate: row.created_at || new Date().toISOString(),
+      uploadedBy: metadata.uploadedBy || 'GKN Admin',
+      visibility: (metadata.visibility || 'PUBLIC') as any,
+      isArchived: Boolean(metadata.isArchived),
+      tags: Array.isArray(metadata.tags) ? metadata.tags : [],
+      description: metadata.description || '',
+      altText: row.alt_text || metadata.altText || row.name,
+      seoTitle: metadata.seoTitle || metadata.title || row.name,
+      seoDescription: metadata.seoDescription || metadata.description || '',
+      usageCount: references.length,
+      usageReferences: references,
+    };
+  }
+
+  public async refreshFromSupabase(): Promise<MediaAssetItem[]> {
+    if (!isSupabaseConfigured) return this.getAssets();
+    const client = getSupabaseClient();
+    if (!client) return this.getAssets();
+    const { data, error } = await client.from('media_assets').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    this.assets = await Promise.all((data || []).map((row: any) => this.rowToAsset(row)));
+    this.saveToStorage();
+    return this.getAssets();
+  }
+
   public getAssets(filters?: MediaFilterOptions): MediaAssetItem[] {
     let result = [...this.assets];
 
@@ -683,27 +762,29 @@ class MediaLibraryService {
     };
   }
 
-  public uploadAsset(
+  public async uploadAsset(
     data: Partial<MediaAssetItem> & { name: string; url: string; category: MediaCategory }
-  ): MediaAssetItem {
+  ): Promise<MediaAssetItem> {
     const ext = data.name.split('.').pop()?.toUpperCase() || 'PNG';
     let fileType: SupportedFileType = 'PNG';
     if (['JPG', 'JPEG', 'PNG', 'WEBP', 'SVG', 'PDF', 'DOCX', 'XLSX', 'ZIP', 'ICO'].includes(ext)) {
       fileType = ext as SupportedFileType;
     }
 
-    const cleanFilename = data.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-');
-    const storagePath = `supabase://storage/gkn-media/${data.category.toLowerCase().replace(/\s+/g, '-')}/${cleanFilename}`;
+    const storagePath = data.storagePath || '';
+    if (!storagePath.startsWith('supabase://storage/gkn-media/')) {
+      throw new Error('Media assets must reference an uploaded object in Supabase Storage.');
+    }
 
     const newAsset: MediaAssetItem = {
-      id: `med-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: crypto.randomUUID(),
       name: data.name,
       title: data.title || data.name.replace(/\.[^/.]+$/, ''),
       category: data.category,
       fileType,
       mimeType: data.mimeType || (fileType === 'PDF' ? 'application/pdf' : 'image/png'),
       url: data.url,
-      storagePath: data.storagePath || storagePath,
+      storagePath,
       dimensions: data.dimensions || (fileType === 'PDF' ? 'A4 Document' : '1200x800 px'),
       resolution: data.resolution || '300 DPI',
       fileSize: data.fileSize || '350 KB',
@@ -721,12 +802,44 @@ class MediaLibraryService {
       usageReferences: [],
     };
 
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase is required to register media assets.');
+    const bucket = 'gkn-media';
+    const objectPath = this.normalizeStoragePath(bucket, storagePath || data.url);
+    const { data: sessionData } = await client.auth.getSession();
+    const { error } = await client.from('media_assets').insert({
+      id: newAsset.id,
+      name: newAsset.title,
+      file_name: newAsset.name,
+      mime_type: newAsset.mimeType,
+      storage_bucket: bucket,
+      storage_path: objectPath,
+      public_url: newAsset.url,
+      category: newAsset.category,
+      width: Number(newAsset.dimensions.match(/^(\d+)/)?.[1]) || null,
+      height: Number(newAsset.dimensions.match(/x(\d+)/)?.[1]) || null,
+      file_size_bytes: newAsset.fileSizeBytes,
+      alt_text: newAsset.altText,
+      metadata_jsonb: {
+        title: newAsset.title,
+        resolution: newAsset.resolution,
+        visibility: newAsset.visibility,
+        isArchived: newAsset.isArchived,
+        tags: newAsset.tags,
+        description: newAsset.description,
+        seoTitle: newAsset.seoTitle,
+        seoDescription: newAsset.seoDescription,
+        usageReferences: newAsset.usageReferences,
+      },
+      uploaded_by: sessionData.session?.user.id || null,
+    } as any);
+    if (error) throw error;
     this.assets.unshift(newAsset);
     this.saveToStorage();
     return newAsset;
   }
 
-  public replaceAsset(id: string, updates: Partial<MediaAssetItem>): MediaAssetItem | null {
+  public async replaceAsset(id: string, updates: Partial<MediaAssetItem>): Promise<MediaAssetItem | null> {
     const idx = this.assets.findIndex((a) => a.id === id);
     if (idx === -1) return null;
 
@@ -735,15 +848,38 @@ class MediaLibraryService {
       ...updates,
     };
 
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase is required to update media assets.');
+    const updated = this.assets[idx];
+    const { error } = await client.from('media_assets').update({
+      name: updated.title,
+      file_name: updated.name,
+      category: updated.category,
+      public_url: updated.url,
+      alt_text: updated.altText,
+      metadata_jsonb: {
+        title: updated.title,
+        resolution: updated.resolution,
+        visibility: updated.visibility,
+        isArchived: updated.isArchived,
+        tags: updated.tags,
+        description: updated.description,
+        seoTitle: updated.seoTitle,
+        seoDescription: updated.seoDescription,
+        usageReferences: updated.usageReferences,
+      },
+      updated_at: new Date().toISOString(),
+    } as any).eq('id', id);
+    if (error) throw error;
     this.saveToStorage();
     return this.assets[idx];
   }
 
-  public renameAsset(id: string, newName: string): MediaAssetItem | null {
+  public async renameAsset(id: string, newName: string): Promise<MediaAssetItem | null> {
     return this.replaceAsset(id, { name: newName, title: newName });
   }
 
-  public duplicateAsset(id: string): MediaAssetItem | null {
+  public async duplicateAsset(id: string): Promise<MediaAssetItem | null> {
     const original = this.getAssetById(id);
     if (!original) return null;
 
@@ -759,11 +895,11 @@ class MediaLibraryService {
     });
   }
 
-  public moveCategory(id: string, newCategory: MediaCategory): MediaAssetItem | null {
+  public async moveCategory(id: string, newCategory: MediaCategory): Promise<MediaAssetItem | null> {
     return this.replaceAsset(id, { category: newCategory });
   }
 
-  public archiveAsset(id: string, isArchived: boolean = true): MediaAssetItem | null {
+  public async archiveAsset(id: string, isArchived: boolean = true): Promise<MediaAssetItem | null> {
     return this.replaceAsset(id, { isArchived });
   }
 

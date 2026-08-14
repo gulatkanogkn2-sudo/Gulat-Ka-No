@@ -24,9 +24,9 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     adminLogo: BRANDING_ASSETS.logo,
     mobileLogo: BRANDING_ASSETS.logo,
     favicon: '/favicon.ico',
-    browserTitle: 'GKN V2 â€” High Purity Laboratory Research Peptides & Analytics',
+    browserTitle: 'GKN — Private Customer Hub',
     browserDescription: 'Premier laboratory peptide procurement platform supporting GroupBuy batches, OnHand immediate dispatch, and volume MOQ sourcing.',
-    brandName: 'GKN V2',
+    brandName: 'GKN',
     brandSlogan: 'Gulat Ka No!!? Scientific Excellence & Verified Purity',
   },
   hero: {
@@ -54,7 +54,7 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     },
   },
   announcement: {
-    message: 'ðŸ”¬ LAB FLASH: BPC-157 & TB-500 Batch #9844 Test Reports Verified at 99.85% Purity. Free Express Shipping on orders over $300.',
+    message: '🔬 LAB FLASH: BPC-157 & TB-500 Batch #9844 Test Reports Verified at 99.85% Purity. Free Express Shipping on orders over $300.',
     backgroundColor: '#0F172A',
     textColor: '#00D9FF',
     startDate: '2026-08-01T00:00:00.000Z',
@@ -92,8 +92,8 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
       storeKey: 'moq',
       image: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80',
       title: 'MOQ Bulk Sourcing',
-      subtitle: 'Institutional & Lab Volume',
-      description: 'Custom contract manufacturing, custom lyophilization vials, and bulk wholesale tiers for institutions.',
+      subtitle: 'Volume & Bulk Ordering',
+      description: 'Custom runs, custom lyophilization vials, and volume pricing.',
       accentColor: '#A855F7',
       buttonText: 'View MOQ Tiers',
       destination: '/moq',
@@ -154,7 +154,7 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
   },
   footer: {
     footerLogo: '',
-    copyrightText: '\u00A9 2026 GKN V2 Laboratory Sourcing Platform. All rights reserved. For research purposes only.',
+    copyrightText: '\u00A9 2026 GKN. All rights reserved.',
     contactEmail: '',
     contactPhone: '',
     address: '',
@@ -193,8 +193,8 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     ],
   },
   seo: {
-    metaTitleTemplate: '%s | GKN V2 Laboratory Research Peptides',
-    defaultMetaDescription: 'GKN V2 is the premier source for HPLC-certified research peptides, offering GroupBuy batch pools, OnHand cold-chain dispatch, and institutional MOQ bulk sourcing.',
+    metaTitleTemplate: '%s | GKN',
+    defaultMetaDescription: 'GKN private customer hub for GroupBuy, OnHand, MOQ ordering, and verified product information.',
     ogImage: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=1200&q=80',
     keywords: ['peptides', 'research chemicals', 'GroupBuy', 'HPLC verified', 'BPC-157', 'TB-500', 'Semaglutide', 'Tirzepatide'],
     googleAnalyticsId: 'G-GKNV2RESEARCH99',
@@ -379,37 +379,28 @@ export class WebsiteManagerService {
   private static async saveConfig(updated: WebsiteConfig): Promise<WebsiteConfig> {
     updated.lastModifiedAt = new Date().toISOString();
     updated.draftVersion += 1;
-    this.currentConfig = updated;
 
-    // Cache locally for instant offline/initial rendering
-    writeCompactJsonCache(STORAGE_KEY, updated);
-
-    // Persist to Supabase system_settings
+    // Supabase is authoritative. Do not report success or update the local cache
+    // until the production write has actually completed.
     if (isSupabaseConfigured) {
       const client = getSupabaseClient();
-      if (client) {
-        try {
-          const { error } = await client
-            .from('system_settings')
-            .upsert(
-              {
-                setting_key: SETTING_KEY,
-                setting_value: updated as unknown as Json,
-                description: 'Global Website Manager configuration and branding assets',
-                updated_at: updated.lastModifiedAt,
-              },
-              { onConflict: 'setting_key' }
-            );
-
-          if (error) {
-            console.error('[WebsiteManagerService] Supabase system_settings upsert error:', error);
-          }
-        } catch (dbErr) {
-          console.error('[WebsiteManagerService] Supabase save error:', dbErr);
-        }
-      }
+      if (!client) throw new Error('Supabase is not available. Website changes were not saved.');
+      const { error } = await client
+        .from('system_settings')
+        .upsert(
+          {
+            setting_key: SETTING_KEY,
+            setting_value: updated as unknown as Json,
+            description: 'Global Website Manager configuration and branding assets',
+            updated_at: updated.lastModifiedAt,
+          },
+          { onConflict: 'setting_key' }
+        );
+      if (error) throw error;
     }
 
+    this.currentConfig = updated;
+    writeCompactJsonCache(STORAGE_KEY, updated);
     notifyListeners({ ...updated });
     return { ...updated };
   }
@@ -486,8 +477,8 @@ export class WebsiteManagerService {
   /**
    * Publish current draft configuration to live site
    */
-  public static async publishConfig(): Promise<WebsiteConfig> {
-    const config = await this.getWebsiteConfig();
+  public static async publishConfig(configOverride?: WebsiteConfig): Promise<WebsiteConfig> {
+    const config = configOverride ? this.mergeWithDefaults(configOverride) : await this.getWebsiteConfig();
     config.isPublished = true;
     config.publishedAt = new Date().toISOString();
     return this.saveConfig(config);

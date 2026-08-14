@@ -45,7 +45,7 @@ export const StoreCardsEditor: React.FC<StoreCardsEditorProps> = ({ storeCards, 
             <Store className="w-5 h-5 text-cyan-400" /> Store Card Artwork (GroupBuy, OnHand, MOQ)
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Manage cover imagery for the 3 core customer store selection cards. Typography, layout, and brand accents are locked to the GKN V2 design system.
+            Manage cover imagery for the three customer store selection cards.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export const StoreCardsEditor: React.FC<StoreCardsEditorProps> = ({ storeCards, 
               ? 'Pre-Order & Community Allocation'
               : card.storeKey === 'onhand'
               ? 'In Stock & Ready to Dispatch'
-              : 'Institutional & Bulk Sourcing';
+              : 'Volume & Bulk Ordering';
 
           const defaultAccent =
             card.storeKey === 'groupbuy'
@@ -164,3 +164,4 @@ export const StoreCardsEditor: React.FC<StoreCardsEditorProps> = ({ storeCards, 
     </div>
   );
 };
+

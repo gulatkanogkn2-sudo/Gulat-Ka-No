@@ -11,6 +11,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { MediaAssetItem, MediaViewMode } from '../../../types/mediaLibrary';
+import { MediaThumbnail } from './MediaThumbnail';
 
 interface MediaGridProps {
   assets: MediaAssetItem[];
@@ -94,7 +95,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
               }`}
             >
               {isImage ? (
-                <img
+                <MediaThumbnail
                   src={asset.url}
                   alt={asset.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -184,3 +185,4 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
     </div>
   );
 };
+

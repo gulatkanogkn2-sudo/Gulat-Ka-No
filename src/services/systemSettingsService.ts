@@ -33,7 +33,7 @@ class SystemSettingsService {
           if (stored) {
             const parsed = JSON.parse(stored) as SystemSettings;
             if (parsed.general?.companyName === 'GKN Research Group Ltd.') {
-              parsed.general.companyName = 'GKN V2';
+              parsed.general.companyName = 'GKN';
             }
             // Deep merge with defaults to ensure any newly added setting keys exist
             this.cachedSettings = this.mergeWithDefaults(parsed);

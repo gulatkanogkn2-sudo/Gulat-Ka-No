@@ -28,6 +28,9 @@ interface MediaUploadModalProps {
     tags: string[];
     dimensions?: string;
     fileSize?: string;
+    fileSizeBytes?: number;
+    mimeType?: string;
+    storagePath?: string;
   }) => void;
 }
 
@@ -54,7 +57,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   onClose,
   onUploadSuccess,
 }) => {
-  const [activeTab, setActiveTab] = useState<'file' | 'url'>('file');
+  const [activeTab] = useState<'file'>('file');
   const [urlInput, setUrlInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [titleInput, setTitleInput] = useState('');
@@ -69,38 +72,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sample quick presets
-  const samplePresets = [
-    {
-      title: 'Lab Cleanroom Synthesizer',
-      url: 'https://images.unsplash.com/photo-1581093588401-fbb62a02f120?auto=format&fit=crop&w=1200&q=80',
-      category: 'Hero Images' as MediaCategory,
-      filename: 'cleanroom-synthesizer-hero.jpg',
-    },
-    {
-      title: 'GC-MS Chromatogram Spectrometer PDF',
-      url: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80',
-      category: 'COA' as MediaCategory,
-      filename: 'gc-ms-chromatogram-report.pdf',
-    },
-    {
-      title: 'BPC-157 Lyophilized Vial Packaging',
-      url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80',
-      category: 'Products' as MediaCategory,
-      filename: 'bpc157-10mg-vial-pack.webp',
-    },
-  ];
-
   if (!isOpen) return null;
-
-  const handleApplyPreset = (p: typeof samplePresets[0]) => {
-    setActiveTab('url');
-    setUrlInput(p.url);
-    setTitleInput(p.title);
-    setNameInput(p.filename);
-    setCategoryInput(p.category);
-    setAltTextInput(p.title);
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,6 +100,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 
     let finalUrl = urlInput.trim();
     let finalFileSize = '320 KB';
+    let finalStoragePath = '';
 
     if (activeTab === 'file') {
       if (!selectedFile && !finalUrl) return;
@@ -148,6 +121,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               if (!uploadError) {
                 const { data: publicUrlData } = client.storage.from('gkn-media').getPublicUrl(storagePath);
                 finalUrl = publicUrlData.publicUrl;
+                finalStoragePath = `supabase://storage/gkn-media/${storagePath}`;
               } else {
                 throw new Error(uploadError.message || 'Media storage upload failed.');
               }
@@ -181,6 +155,9 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
       tags: tags.length > 0 ? tags : [categoryInput.toLowerCase()],
       dimensions: '1200x800 px',
       fileSize: finalFileSize,
+      fileSizeBytes: selectedFile?.size,
+      mimeType: selectedFile?.type,
+      storagePath: finalStoragePath,
     });
 
     onClose();
@@ -225,7 +202,6 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         <div className="flex border-b border-slate-800 bg-slate-950/60 p-2 gap-2">
           <button
             type="button"
-            onClick={() => setActiveTab('file')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'file'
                 ? 'bg-[#00D9FF] text-black shadow-[0_0_15px_rgba(0,217,255,0.3)]'
@@ -234,37 +210,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
           >
             <Upload className="w-3.5 h-3.5" /> Upload File From Device
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('url')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'url'
-                ? 'bg-[#00D9FF] text-black shadow-[0_0_15px_rgba(0,217,255,0.3)]'
-                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-            }`}
-          >
-            <LinkIcon className="w-3.5 h-3.5" /> Remote URL / Presets
-          </button>
         </div>
-
-        {/* Preset Bar (Shown when on URL tab) */}
-        {activeTab === 'url' && (
-          <div className="p-3 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1 flex-shrink-0">
-              <Sparkles className="w-3 h-3" /> Sample Presets:
-            </span>
-            {samplePresets.map((p) => (
-              <button
-                key={p.title}
-                type="button"
-                onClick={() => handleApplyPreset(p)}
-                className="px-2.5 py-1 bg-slate-900 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-800 hover:border-cyan-800 rounded-lg text-[10px] font-mono transition-colors flex-shrink-0 cursor-pointer"
-              >
-                + {p.title}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -291,33 +237,12 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 </span>
                 <span className="text-[10px] text-slate-500">
                   {selectedFile
-                    ? `${(selectedFile.size / 1024).toFixed(0)} KB â€¢ Click to choose different file`
+                    ? `${(selectedFile.size / 1024).toFixed(0)} KB • Click to choose different file`
                     : 'Supports PNG, JPG, WEBP, SVG, PDF up to 10MB'}
                 </span>
               </div>
             </div>
-          ) : (
-            <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
-                Asset Media URL / Storage Pointer *
-              </label>
-              <input
-                type="text"
-                required
-                value={urlInput}
-                onChange={(e) => {
-                  setUrlInput(e.target.value);
-                  if (!nameInput) {
-                    const filename = e.target.value.split('/').pop()?.split('?')[0] || 'asset.png';
-                    setNameInput(filename);
-                    setTitleInput(filename.replace(/\.[^/.]+$/, ''));
-                  }
-                }}
-                placeholder="https://images.unsplash.com/... or media://..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-cyan-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-          )}
+          ) : null}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -453,5 +378,4 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     </div>
   );
 };
-
 

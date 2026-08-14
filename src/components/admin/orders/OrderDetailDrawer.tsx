@@ -546,14 +546,14 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 )}
               </div>
 
-              {/* PAYMENT SUMMARY (PREPARED FOR MODULE 4.5) */}
+              {/* Payment summary */}
               <div className="bg-slate-950/80 border border-purple-500/30 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
                   <h3 className="text-xs font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
                     <CreditCard className="h-3.5 w-3.5" /> Payment Summary
                   </h3>
                   <span className="text-[10px] font-mono text-purple-300/70 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded">
-                    Verification managed in Module 4.5
+                    Verification managed in Payment Verification
                   </span>
                 </div>
 
@@ -658,14 +658,14 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                               )}
                             </div>
                             <div className="text-[11px] text-slate-400 font-mono">
-                              {item.variantLabel} {item.casNumber ? `â€¢ CAS ${item.casNumber}` : ''} â€¢ <span className="text-[#00D9FF] font-bold">{itemVials} Vials</span>
+                              {item.variantLabel} {item.casNumber ? `• CAS ${item.casNumber}` : ''} • <span className="text-[#00D9FF] font-bold">{itemVials} Vials</span>
                             </div>
                           </div>
                         </div>
 
                         <div className="text-right font-mono">
                           <div className="text-slate-300 font-medium">
-                            {item.quantity} Ã— ${item.price.toFixed(2)}
+                            {item.quantity} × ${item.price.toFixed(2)}
                           </div>
                           <div className="font-bold text-emerald-400">
                             ${(item.quantity * item.price).toFixed(2)}

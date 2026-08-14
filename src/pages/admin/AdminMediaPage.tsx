@@ -98,7 +98,8 @@ export const AdminMediaPage: React.FC = () => {
   const [replaceUrlInput, setReplaceUrlInput] = useState('');
   const [replaceTitleInput, setReplaceTitleInput] = useState('');
 
-  const refreshData = () => {
+  const refreshData = async (syncRemote = false) => {
+    if (syncRemote) await mediaLibraryService.refreshFromSupabase();
     const allAssets = mediaLibraryService.getAssets(filters);
 
     // Apply main category tab filter if not ALL
@@ -112,7 +113,10 @@ export const AdminMediaPage: React.FC = () => {
   };
 
   useEffect(() => {
-    refreshData();
+    refreshData(true).catch((error) => {
+      console.error('[AdminMediaPage] Failed to load media registry:', error);
+      showToast('Unable to load the Media Library.');
+    });
   }, [filters, activeTab]);
 
   const showToast = (msg: string) => {
@@ -142,11 +146,11 @@ export const AdminMediaPage: React.FC = () => {
   };
 
   // Save updates from drawer
-  const handleSaveAssetUpdates = (id: string, updates: Partial<MediaAssetItem>) => {
-    const updated = mediaLibraryService.replaceAsset(id, updates);
+  const handleSaveAssetUpdates = async (id: string, updates: Partial<MediaAssetItem>) => {
+    const updated = await mediaLibraryService.replaceAsset(id, updates);
     if (updated) {
       showToast(`Asset "${updated.title}" updated successfully.`);
-      refreshData();
+      await refreshData();
       if (selectedAssetForInspect && selectedAssetForInspect.id === id) {
         setSelectedAssetForInspect(updated);
       }
@@ -160,18 +164,18 @@ export const AdminMediaPage: React.FC = () => {
     setReplaceTitleInput(asset.title);
   };
 
-  const handleConfirmReplace = (e: React.FormEvent) => {
+  const handleConfirmReplace = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replaceTargetAsset || !replaceUrlInput.trim()) return;
 
-    const updated = mediaLibraryService.replaceAsset(replaceTargetAsset.id, {
+    const updated = await mediaLibraryService.replaceAsset(replaceTargetAsset.id, {
       url: replaceUrlInput.trim(),
       title: replaceTitleInput.trim() || replaceTargetAsset.title,
     });
 
     if (updated) {
       showToast(`Successfully replaced media source for "${updated.title}".`);
-      refreshData();
+      await refreshData();
       setReplaceTargetAsset(null);
       if (selectedAssetForInspect?.id === replaceTargetAsset.id) {
         setSelectedAssetForInspect(updated);
@@ -180,8 +184,8 @@ export const AdminMediaPage: React.FC = () => {
   };
 
   // Duplicate Asset
-  const handleDuplicateAsset = (id: string) => {
-    const duplicated = mediaLibraryService.duplicateAsset(id);
+  const handleDuplicateAsset = async (id: string) => {
+    const duplicated = await mediaLibraryService.duplicateAsset(id);
     if (duplicated) {
       showToast(`Duplicated asset created: "${duplicated.title}".`);
       refreshData();
@@ -190,8 +194,8 @@ export const AdminMediaPage: React.FC = () => {
   };
 
   // Toggle Archive
-  const handleToggleArchiveAsset = (id: string, isArchived: boolean) => {
-    mediaLibraryService.archiveAsset(id, isArchived);
+  const handleToggleArchiveAsset = async (id: string, isArchived: boolean) => {
+    await mediaLibraryService.archiveAsset(id, isArchived);
     showToast(`Asset archive status updated to ${isArchived ? 'Archived' : 'Active'}.`);
     refreshData();
     setIsDetailDrawerOpen(false);
@@ -245,10 +249,10 @@ export const AdminMediaPage: React.FC = () => {
   };
 
   // Upload handler
-  const handleUploadSuccess = (data: any) => {
-    const created = mediaLibraryService.uploadAsset(data);
+  const handleUploadSuccess = async (data: any) => {
+    const created = await mediaLibraryService.uploadAsset(data);
     showToast(`Successfully indexed asset "${created.title}" in Media Library.`);
-    refreshData();
+    await refreshData(true);
   };
 
   // Bulk Actions
@@ -299,7 +303,7 @@ export const AdminMediaPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-800 uppercase tracking-wider">
-              GKN V2 Media Library
+              GKN Media Library
             </span>
             <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -309,7 +313,7 @@ export const AdminMediaPage: React.FC = () => {
 
           <h1 className="text-xl font-extrabold text-white">MEDIA ASSETS</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Centralized media and document library for reusable GKN V2 website and research assets.
+            Supabase-backed media and document library for reusable GKN website assets.
           </p>
         </div>
 
@@ -639,3 +643,4 @@ export const AdminMediaPage: React.FC = () => {
     </div>
   );
 };
+

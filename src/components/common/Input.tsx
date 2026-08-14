@@ -95,7 +95,7 @@ export const Input: React.FC<InputProps> = ({
 
       {error ? (
         <p className="text-xs text-red-400 mt-1 flex items-center gap-1 font-medium">
-          <span>âš ï¸</span> {error}
+          <span>⚠️</span> {error}
         </p>
       ) : helperText ? (
         <p className="text-xs text-slate-400 mt-1">{helperText}</p>

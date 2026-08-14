@@ -89,10 +89,16 @@ export const AdminWebsitePage: React.FC = () => {
 
   const handlePublish = async () => {
     setIsPublishing(true);
-    const updated = await WebsiteManagerService.publishConfig();
-    setConfig(updated);
-    setIsPublishing(false);
-    showToast(`Site published to live production! Version #${updated.draftVersion}`);
+    try {
+      const updated = await WebsiteManagerService.publishConfig(config || undefined);
+      setConfig(updated);
+      showToast(`Site published to live production! Version #${updated.draftVersion}`);
+    } catch (error) {
+      console.error('[AdminWebsitePage] Publish failed:', error);
+      showToast('Publish failed. Your saved production branding was not overwritten.');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleResetDefaults = () => {
@@ -135,7 +141,7 @@ export const AdminWebsitePage: React.FC = () => {
     return (
       <div className="p-12 text-center text-slate-400 font-mono text-xs flex flex-col items-center gap-3">
         <Sparkles className="w-6 h-6 text-cyan-400 animate-spin" />
-        Loading GKN V2 Website Manager configuration...
+        Loading GKN Website Manager configuration...
       </div>
     );
   }
@@ -164,7 +170,7 @@ export const AdminWebsitePage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-800 uppercase">
-              Module 4.7 — Website Manager
+              Website Manager
             </span>
             <span
               className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded border ${
@@ -355,3 +361,4 @@ export const AdminWebsitePage: React.FC = () => {
     </div>
   );
 };
+

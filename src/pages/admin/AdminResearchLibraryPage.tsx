@@ -322,7 +322,7 @@ export const AdminResearchLibraryPage: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-                MODULE 4.8
+                Research Library
               </span>
               <span className="text-xs font-mono text-slate-400">ADMINISTRATOR WORKSPACE</span>
             </div>
@@ -609,3 +609,4 @@ export const AdminResearchLibraryPage: React.FC = () => {
     </div>
   );
 };
+

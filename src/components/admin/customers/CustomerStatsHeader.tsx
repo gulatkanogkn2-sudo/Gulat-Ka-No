@@ -79,7 +79,7 @@ export const CustomerStatsHeader: React.FC = () => {
     {
       title: 'Pending Verification',
       value: stats.pendingVerificationCount.toString(),
-      subtext: 'Awaiting KYC ID Check',
+      subtext: 'Awaiting Account Review',
       icon: Clock,
       color: 'text-purple-400',
       borderColor: 'border-purple-500/20',

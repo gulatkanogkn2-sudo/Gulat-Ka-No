@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ShieldCheck, RefreshCw, Download, Sparkles, CheckCircle2 } from 'lucide-react';
 import {
   PaymentVerificationRecord,
@@ -20,7 +20,9 @@ import { PaymentBulkActions } from '../../components/admin/payments/PaymentBulkA
 
 export const AdminPaymentsPage: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const orderIdParam = new URLSearchParams(location.search).get('orderId');
+  const openedFromOrderParam = useRef(false);
   // Filter & Queue State
   const [filters, setFilters] = useState<PaymentFilterOptions>({
     searchQuery: '',
@@ -92,13 +94,34 @@ export const AdminPaymentsPage: React.FC = () => {
   }, [loadPayments]);
 
   useEffect(() => {
-    if (!orderIdParam || loading || isDrawerOpen) return;
+    if (!orderIdParam) {
+      if (openedFromOrderParam.current) {
+        openedFromOrderParam.current = false;
+        setDrawerPayment(null);
+        setIsDrawerOpen(false);
+      }
+      return;
+    }
+    if (loading) return;
     const exactPayment = payments.find((payment) => payment.orderId === orderIdParam);
     if (exactPayment) {
+      openedFromOrderParam.current = true;
       setDrawerPayment(exactPayment);
       setIsDrawerOpen(true);
     }
-  }, [orderIdParam, payments, loading, isDrawerOpen]);
+  }, [orderIdParam, payments, loading]);
+
+  const closePaymentDrawer = useCallback(() => {
+    openedFromOrderParam.current = false;
+    setDrawerPayment(null);
+    setIsDrawerOpen(false);
+    const params = new URLSearchParams(location.search);
+    if (params.has('orderId')) {
+      params.delete('orderId');
+      const nextSearch = params.toString();
+      navigate({ pathname: location.pathname, search: nextSearch ? `?${nextSearch}` : '' }, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {
     const unsub = PaymentVerificationService.subscribeToPaymentUpdates(() => {
@@ -128,7 +151,8 @@ export const AdminPaymentsPage: React.FC = () => {
   const handleVerifyPayment = async (p: PaymentVerificationRecord) => {
     await PaymentVerificationService.verifyPayment(p.id, 'Admin Sarah');
     showToast(`Payment ${p.paymentReference} verified successfully! Order status set to CONFIRMED.`);
-    loadPayments();
+    closePaymentDrawer();
+    await loadPayments();
   };
 
   const handleOpenRejectModal = (p: PaymentVerificationRecord) => {
@@ -144,7 +168,9 @@ export const AdminPaymentsPage: React.FC = () => {
       'Admin Sarah'
     );
     showToast(`Payment ${rejectModalPayment.paymentReference} rejected. Reason logged.`);
-    loadPayments();
+    setIsRejectModalOpen(false);
+    closePaymentDrawer();
+    await loadPayments();
   };
 
   const handleOpenInfoModal = (p: PaymentVerificationRecord) => {
@@ -160,7 +186,9 @@ export const AdminPaymentsPage: React.FC = () => {
       'Admin Sarah'
     );
     showToast(`Information request sent for ${infoModalPayment.paymentReference}.`);
-    loadPayments();
+    setIsInfoModalOpen(false);
+    closePaymentDrawer();
+    await loadPayments();
   };
 
   const handleOpenReassignModal = (p: PaymentVerificationRecord) => {
@@ -263,7 +291,7 @@ export const AdminPaymentsPage: React.FC = () => {
               <h1 className="text-xl font-mono font-bold text-white flex items-center gap-2">
                 Payment Verification Queue
                 <span className="text-xs bg-cyan-950 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded font-mono">
-                  Module 4.5
+                  Payments
                 </span>
               </h1>
               <p className="text-xs font-mono text-slate-400 mt-0.5">
@@ -345,7 +373,7 @@ export const AdminPaymentsPage: React.FC = () => {
       {/* Detail Sliding Drawer */}
       <PaymentDetailDrawer
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+        onClose={closePaymentDrawer}
         payment={drawerPayment}
         onOpenProofViewer={(p) => {
           setProofViewerPayment(p);

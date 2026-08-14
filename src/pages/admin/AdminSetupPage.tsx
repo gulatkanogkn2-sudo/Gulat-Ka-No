@@ -139,7 +139,7 @@ export const AdminSetupPage: React.FC = () => {
                 <span className="text-[#00D9FF] font-mono text-xs">OPERATIONAL MONITORING</span>
               </h1>
               <p className="text-xs text-slate-400 font-mono">
-                Real-time operational health telemetry across GKN V2 core infrastructure and storefront services.
+                Operational health across GKN infrastructure and storefront services.
               </p>
             </div>
           </div>
@@ -427,3 +427,4 @@ export const AdminSetupPage: React.FC = () => {
     </div>
   );
 };
+

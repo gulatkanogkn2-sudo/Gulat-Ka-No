@@ -126,7 +126,7 @@ export const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({
               </div>
               <div>
                 <span className="font-extrabold text-sm text-white tracking-wider">
-                  {config.branding.brandName || 'GKN V2'}
+                  {config.branding.brandName || 'GKN'}
                 </span>
                 <span className="text-[9px] font-mono text-cyan-400 block -mt-0.5">
                   {config.branding.brandSlogan || 'Research Peptides'}
@@ -135,7 +135,7 @@ export const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">PHP â‚± / USD $</span>
+              <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">PHP ₱ / USD $</span>
               <div className="px-3 py-1.5 bg-cyan-500 text-slate-950 font-bold rounded-lg text-xs shadow-md shadow-cyan-500/20 flex items-center gap-1.5">
                 <ShoppingBag className="w-3.5 h-3.5" /> Cart (0)
               </div>
@@ -237,7 +237,7 @@ export const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({
                     <h3 className="text-sm font-bold text-white">MOQ Store</h3>
                   </div>
                   <p className="text-xs text-slate-300">
-                    Volume institutional contracts, custom synthesis runs, and bulk enterprise pricing.
+                    Volume ordering, custom runs, and bulk pricing.
                   </p>
                 </div>
                 <div className="w-full py-2 bg-[#FF2ED1] text-black font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md">
@@ -249,7 +249,7 @@ export const WebsiteLivePreview: React.FC<WebsiteLivePreviewProps> = ({
 
           {/* Footer */}
           <footer className="p-4 bg-[#0A0F1D] border-t border-slate-800/80 text-center text-slate-500 font-mono text-[10px] mt-auto">
-            {config.footer.copyrightText || '\u00A9 2026 GKN V2. All rights reserved.'}
+            {config.footer.copyrightText || '\u00A9 2026 GKN. All rights reserved.'}
           </footer>
         </div>
       </div>
