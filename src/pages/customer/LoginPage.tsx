@@ -56,11 +56,11 @@ export const LoginPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="Researcher Sign In"
-      description="Access your laboratory profile, COA downloads, and active allocations."
+      title="Sign In"
+      description="Sign in to your private GKN V2 account."
     >
       <div className="max-w-md mx-auto">
-        <Card title="Portal Authentication" variant="glass">
+        <Card title="Sign In" variant="glass">
           {error && (
             <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium">
               {error}
@@ -71,7 +71,7 @@ export const LoginPage: React.FC = () => {
             <Input
               label="Email Address"
               type="email"
-              placeholder="researcher@institution.edu"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -86,7 +86,7 @@ export const LoginPage: React.FC = () => {
               </div>
               <Input
                 type="password"
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -94,14 +94,14 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <Button variant="primary" type="submit" className="w-full mt-2" disabled={loading}>
-              {loading ? 'Authenticating...' : 'Sign In to Portal'}
+              {loading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-xs text-slate-400">
             Don't have an account?{' '}
             <Link to="/register" className="text-[#00D9FF] hover:underline font-semibold">
-              Register here
+              Register
             </Link>
           </div>
         </Card>
@@ -109,3 +109,4 @@ export const LoginPage: React.FC = () => {
     </PageContainer>
   );
 };
+
