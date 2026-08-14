@@ -415,7 +415,7 @@ export const AdminDashboardService = {
           if (metric.id === 'total-orders') return { ...metric, value: String(ordersResult.count ?? 0), subValue: 'Live production orders', trend: undefined };
           if (metric.id === 'pending-payments') return { ...metric, value: String(paymentsResult.count ?? 0), subValue: 'Awaiting verification', trend: undefined };
           if (metric.id === 'total-customers') return { ...metric, value: String(customersResult.count ?? 0), subValue: 'Registered customer accounts', trend: undefined };
-          if (metric.id === 'revenue-summary') return { ...metric, value: `\u20B1${metric.value.replace(/[^0-9,.-]/g, '')}`, trend: undefined };
+          if (metric.id === 'revenue-summary') return { ...metric, value: `\u20B1${String(metric.value).replace(/[^0-9,.-]/g, '')}`, trend: undefined };
           if (metric.id === 'recent-expenses') return { ...metric, value: 'View', subValue: 'Open verified expense records', trend: undefined };
           if (['active-groupbuy', 'onhand-inventory', 'moq-campaigns'].includes(metric.id)) {
             return { ...metric, value: 'View', subValue: 'Open for live store data', trend: undefined };
