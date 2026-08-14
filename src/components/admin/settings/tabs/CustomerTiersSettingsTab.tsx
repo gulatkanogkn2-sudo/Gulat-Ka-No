@@ -79,7 +79,7 @@ export const CustomerTiersSettingsTab: React.FC = () => {
       {/* Overview & Controls Header Card */}
       <SettingCard
         title="Automatic Customer Tier Thresholds & Engine"
-        description="Configure purchase threshold levels in PHP (₱) required to automatically promote customer accounts. The tier engine evaluates qualifying finalized orders dynamically."
+        description="Configure purchase threshold levels in PHP (â‚±) required to automatically promote customer accounts. The tier engine evaluates qualifying finalized orders dynamically."
         icon={<Crown size={18} className="text-amber-400" />}
       >
         <div className="space-y-4">
@@ -134,7 +134,7 @@ export const CustomerTiersSettingsTab: React.FC = () => {
 
       {/* Tier Configuration List */}
       <SettingCard
-        title="Configurable Tier Levels & Spending Requirements (PHP ₱)"
+        title="Configurable Tier Levels & Spending Requirements (PHP â‚±)"
         description="Set minimum lifetime qualifying spending required for each tier. Spending is calculated strictly from finalized/paid orders."
         icon={<Award size={18} className="text-cyan-400" />}
       >
@@ -188,13 +188,13 @@ export const CustomerTiersSettingsTab: React.FC = () => {
                     value={tier.name}
                     onChange={(val) => handleTierChange(idx, { name: val })}
                     helperText="Customer-facing label rendered on badges, invoices, and profile headers."
-                    exampleText="Gold Tier Researcher"
+                    exampleText="Gold Tier Customer"
                   />
 
                   {isOwner ? (
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-slate-300">
-                        Minimum Qualifying Spending (PHP ₱)
+                        Minimum Qualifying Spending (PHP â‚±)
                       </label>
                       <div className="h-10 px-3.5 bg-slate-900/60 border border-slate-800 rounded-xl text-slate-500 font-mono text-xs flex items-center gap-2">
                         <Lock size={14} className="text-pink-400" />
@@ -206,7 +206,7 @@ export const CustomerTiersSettingsTab: React.FC = () => {
                     </div>
                   ) : (
                     <SettingInput
-                      label="Minimum Lifetime Qualifying Spend (PHP ₱)"
+                      label="Minimum Lifetime Qualifying Spend (PHP â‚±)"
                       type="number"
                       min="0"
                       value={tier.minLifetimeSpendPhp}
@@ -246,3 +246,4 @@ export const CustomerTiersSettingsTab: React.FC = () => {
     </div>
   );
 };
+
