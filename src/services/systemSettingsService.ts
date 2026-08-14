@@ -35,8 +35,6 @@ class SystemSettingsService {
             if (parsed.general?.companyName === 'GKN Research Group Ltd.') {
               parsed.general.companyName = 'GKN V2';
             }
-            parsed.general.websiteName = 'GKN V2';
-            parsed.general.brandName = 'GKN V2';
             // Deep merge with defaults to ensure any newly added setting keys exist
             this.cachedSettings = this.mergeWithDefaults(parsed);
           }
