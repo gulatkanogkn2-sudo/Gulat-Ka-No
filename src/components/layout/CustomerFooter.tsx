@@ -132,7 +132,7 @@ export const CustomerFooter: React.FC = () => {
         {/* Bottom Legal */}
         <div className="pt-6 mt-4 border-t border-white/5 flex flex-col items-center justify-center text-xs">
           <p className="text-slate-500 font-mono text-[11px] mb-2">
-            Â© {new Date().getFullYear()} {companyName} ({brandName}). All rights reserved.
+            {'\u00A9'} {new Date().getFullYear()} {companyName} ({brandName}). All rights reserved.
           </p>
           <div className="w-[100px] h-[3px] bg-gradient-to-r from-transparent via-[#00D9FF] to-transparent mt-2 rounded-full opacity-50"></div>
         </div>
