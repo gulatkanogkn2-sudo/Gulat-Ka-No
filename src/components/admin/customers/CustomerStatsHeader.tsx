@@ -50,7 +50,7 @@ export const CustomerStatsHeader: React.FC = () => {
 
   const metricCards = [
     {
-      title: 'Total Researchers',
+      title: 'Total Customers',
       value: stats.totalCustomers.toString(),
       subtext: 'Registered Accounts',
       icon: Users,
@@ -140,3 +140,4 @@ export const CustomerStatsHeader: React.FC = () => {
     </div>
   );
 };
+
