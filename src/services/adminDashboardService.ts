@@ -365,6 +365,7 @@ export const AdminDashboardService = {
    */
   async getDashboardData(): Promise<AdminDashboardData> {
     await new Promise((resolve) => setTimeout(resolve, 50));
+    currentAlerts = [];
     const unreadCount = currentAlerts.filter(a => !a.isRead).length;
     currentHeaderData.unreadNotificationsCount = unreadCount;
 
@@ -414,6 +415,8 @@ export const AdminDashboardService = {
           if (metric.id === 'total-orders') return { ...metric, value: String(ordersResult.count ?? 0), subValue: 'Live production orders', trend: undefined };
           if (metric.id === 'pending-payments') return { ...metric, value: String(paymentsResult.count ?? 0), subValue: 'Awaiting verification', trend: undefined };
           if (metric.id === 'total-customers') return { ...metric, value: String(customersResult.count ?? 0), subValue: 'Registered customer accounts', trend: undefined };
+          if (metric.id === 'revenue-summary') return { ...metric, value: `\u20B1${metric.value.replace(/[^0-9,.-]/g, '')}`, trend: undefined };
+          if (metric.id === 'recent-expenses') return { ...metric, value: 'View', subValue: 'Open verified expense records', trend: undefined };
           if (['active-groupbuy', 'onhand-inventory', 'moq-campaigns'].includes(metric.id)) {
             return { ...metric, value: 'View', subValue: 'Open for live store data', trend: undefined };
           }
@@ -438,7 +441,8 @@ export const AdminDashboardService = {
   },
 
   async getAlerts(): Promise<AdminAlertItem[]> {
-    return [...currentAlerts];
+    currentAlerts = [];
+    return [];
   },
 
   async markAlertAsRead(id: string): Promise<AdminAlertItem[]> {
