@@ -67,10 +67,10 @@ export const RegisterPage: React.FC = () => {
   return (
     <PageContainer
       title="Register Account"
-      description="Register for verified peptide allocations, order tracking, and research hub access."
+      description="Create your private GKN V2 customer account."
     >
       <div className="max-w-md mx-auto">
-        <Card title="New Researcher Registration" variant="glass">
+        <Card title="Register Account" variant="glass">
           {success ? (
             <div className="text-center space-y-4 py-4">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4">
@@ -98,17 +98,17 @@ export const RegisterPage: React.FC = () => {
 
               <form onSubmit={handleRegister} className="space-y-4">
                 <Input
-                  label="Full Name / Principal Investigator"
+                  label="Full Name"
                   type="text"
-                  placeholder="Dr. Jane Doe"
+                  placeholder="Your full name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
                 />
                 <Input
-                  label="Institutional / Research Email"
+                  label="Email Address"
                   type="email"
-                  placeholder="researcher@institution.edu"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -116,7 +116,7 @@ export const RegisterPage: React.FC = () => {
                 <Input
                   label="Password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -125,7 +125,7 @@ export const RegisterPage: React.FC = () => {
                 <Input
                   label="Confirm Password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -139,7 +139,7 @@ export const RegisterPage: React.FC = () => {
               <div className="mt-6 text-center text-xs text-slate-400">
                 Already have an account?{' '}
                 <Link to="/login" className="text-[#00D9FF] hover:underline font-semibold">
-                  Sign In here
+                  Sign In
                 </Link>
               </div>
             </>
@@ -149,3 +149,4 @@ export const RegisterPage: React.FC = () => {
     </PageContainer>
   );
 };
+

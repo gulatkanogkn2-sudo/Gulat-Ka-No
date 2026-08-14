@@ -18,7 +18,7 @@ export const OrderProductsTable: React.FC<OrderProductsTableProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
           <Package className="w-4 h-4 text-[#00D9FF]" />
-          Allocated Research Items ({items.length})
+          Order Items ({items.length})
         </h3>
         <span className="text-xs font-mono font-bold text-[#00D9FF] bg-[#00D9FF]/10 px-2.5 py-1 rounded border border-[#00D9FF]/20">
           Total: {calculateTotalVials(items)} Vials
@@ -87,3 +87,4 @@ export const OrderProductsTable: React.FC<OrderProductsTableProps> = ({
     </div>
   );
 };
+

@@ -173,7 +173,7 @@ export const CheckoutPage: React.FC = () => {
 
     // 1. Customer Information
     if (!customerInfo.fullName.trim()) {
-      setValidationError('Please provide the full name for the researcher or receiving contact.');
+      setValidationError('Please provide the full name for the customer or receiving contact.');
       return false;
     }
     if (!customerInfo.email.trim() || !customerInfo.email.includes('@')) {
@@ -278,7 +278,7 @@ export const CheckoutPage: React.FC = () => {
           <div className="space-y-2">
             <h2 className="text-xl font-bold text-white">No Staged Allocations Found</h2>
             <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Your staging cart is empty. Please select peptide standard batches or laboratory items from the store portals before proceeding to checkout.
+              Your cart is empty. Please select products from the stores before proceeding to checkout.
             </p>
           </div>
 
@@ -362,4 +362,5 @@ export const CheckoutPage: React.FC = () => {
     </PageContainer>
   );
 };
+
 

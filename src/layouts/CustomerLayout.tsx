@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, Navigate, useLocation } from 'react-router-dom';
 import { CustomerHeader } from '../components/layout/CustomerHeader';
 import { CustomerFooter } from '../components/layout/CustomerFooter';
 import { systemSettingsService } from '../services/systemSettingsService';
 import { Wrench, ShieldAlert, Lock } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export const CustomerLayout: React.FC = () => {
+  const location = useLocation();
+  const { isAuthenticated, loading, isDevMode } = useAuth();
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [maintenanceTitle, setMaintenanceTitle] = useState('Scheduled Maintenance');
   const [maintenanceMessage, setMaintenanceMessage] = useState(
@@ -31,6 +34,28 @@ export const CustomerLayout: React.FC = () => {
     const unsubscribe = systemSettingsService.subscribe(updateSettings);
     return () => unsubscribe();
   }, []);
+
+  const publicAuthRoutes = new Set(['/login', '/sign-in', '/register', '/forgot-password', '/reset-password']);
+  const isPublicAuthRoute = publicAuthRoutes.has(location.pathname);
+
+  if (loading && !isPublicAuthRoute) {
+    return (
+      <div className="min-h-screen bg-[#050810] text-slate-100 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 rounded-full bg-[#00D9FF] animate-ping mx-auto opacity-75" />
+          <p className="text-slate-400 text-sm font-mono tracking-widest uppercase">Loading GKN V2...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && !isAuthenticated && !isDevMode && !isPublicAuthRoute) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (isPublicAuthRoute) {
+    return <Outlet />;
+  }
 
   if (isMaintenance) {
     return (
@@ -113,3 +138,4 @@ export const CustomerLayout: React.FC = () => {
     </div>
   );
 };
+

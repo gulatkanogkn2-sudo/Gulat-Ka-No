@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ShieldCheck, RefreshCw, Download, Sparkles, CheckCircle2 } from 'lucide-react';
 import {
   PaymentVerificationRecord,
@@ -18,6 +19,8 @@ import {
 import { PaymentBulkActions } from '../../components/admin/payments/PaymentBulkActions';
 
 export const AdminPaymentsPage: React.FC = () => {
+  const location = useLocation();
+  const orderIdParam = new URLSearchParams(location.search).get('orderId');
   // Filter & Queue State
   const [filters, setFilters] = useState<PaymentFilterOptions>({
     searchQuery: '',
@@ -87,6 +90,15 @@ export const AdminPaymentsPage: React.FC = () => {
   useEffect(() => {
     loadPayments();
   }, [loadPayments]);
+
+  useEffect(() => {
+    if (!orderIdParam || loading || isDrawerOpen) return;
+    const exactPayment = payments.find((payment) => payment.orderId === orderIdParam);
+    if (exactPayment) {
+      setDrawerPayment(exactPayment);
+      setIsDrawerOpen(true);
+    }
+  }, [orderIdParam, payments, loading, isDrawerOpen]);
 
   useEffect(() => {
     const unsub = PaymentVerificationService.subscribeToPaymentUpdates(() => {
@@ -393,3 +405,4 @@ export const AdminPaymentsPage: React.FC = () => {
     </div>
   );
 };
+

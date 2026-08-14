@@ -41,7 +41,7 @@ export const TrackingSearch: React.FC<TrackingSearchProps> = ({
           REAL-TIME BATCH TRACKING ENGINE
         </span>
         <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-          Track Research Allocation & Waybill Status
+          Track Order & Waybill Status
         </h2>
         <p className="text-xs text-slate-300">
           Enter your GKN order reference number to view real-time batch staging, shipment status, and courier dispatch.
@@ -119,3 +119,4 @@ export const TrackingSearch: React.FC<TrackingSearchProps> = ({
     </Card>
   );
 };
+

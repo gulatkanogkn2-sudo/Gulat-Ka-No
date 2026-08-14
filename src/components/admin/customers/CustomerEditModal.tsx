@@ -69,7 +69,7 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-amber-400" />
             <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-slate-100">
-              Edit Researcher Profile — {customer.customerCode}
+              Edit Researcher Profile â€” {customer.customerCode}
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
@@ -166,8 +166,6 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
                 <option value="SILVER">SILVER</option>
                 <option value="GOLD">GOLD</option>
                 <option value="VIP">VIP</option>
-                <option value="ADMINISTRATOR">ADMINISTRATOR</option>
-                <option value="OWNER">OWNER</option>
               </select>
               <label className="flex items-center gap-2 mt-2 text-[11px] text-amber-400 cursor-pointer select-none">
                 <input
@@ -238,3 +236,4 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
     </div>
   );
 };
+

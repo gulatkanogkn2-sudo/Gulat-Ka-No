@@ -70,7 +70,7 @@ export const OrderDetailsPage: React.FC = () => {
     return (
       <PageContainer
         title="Order Allocation Details"
-        description="Verify research allocation progress, batch threshold funding, and shipment status."
+        description="View order progress, payment status, and shipment status."
       >
         <TrackingEmptyState
           searchedRef={reference}
@@ -135,3 +135,4 @@ export const OrderDetailsPage: React.FC = () => {
     </PageContainer>
   );
 };
+

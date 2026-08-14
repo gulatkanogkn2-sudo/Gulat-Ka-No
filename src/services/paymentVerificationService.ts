@@ -412,7 +412,7 @@ export class PaymentVerificationService {
     let filtered = await fetchProductionPayments() as PaymentVerificationRecord[];
     if (filters.searchQuery?.trim()) {
       const q = filters.searchQuery.trim().toLowerCase();
-      filtered = filtered.filter((payment) => [payment.paymentReference, payment.orderNumber, payment.customerName, payment.customerEmail, payment.transactionReference].some((value) => value.toLowerCase().includes(q)));
+      filtered = filtered.filter((payment) => [payment.paymentReference, payment.orderNumber, payment.orderId, payment.customerName, payment.customerEmail, payment.transactionReference].some((value) => value.toLowerCase().includes(q)));
     }
     if (filters.storeFilter && filters.storeFilter !== 'all') filtered = filtered.filter((payment) => payment.storeType.toLowerCase() === filters.storeFilter!.toLowerCase());
     if (filters.statusFilter && filters.statusFilter !== 'all') filtered = filtered.filter((payment) => payment.verificationStatus === filters.statusFilter);
@@ -963,3 +963,4 @@ export class PaymentVerificationService {
     };
   }
 }
+

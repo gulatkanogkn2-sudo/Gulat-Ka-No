@@ -74,7 +74,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 <Input
                   label="Registered Email Address"
                   type="email"
-                  placeholder="researcher@institution.edu"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -98,3 +98,4 @@ export const ForgotPasswordPage: React.FC = () => {
     </PageContainer>
   );
 };
+
