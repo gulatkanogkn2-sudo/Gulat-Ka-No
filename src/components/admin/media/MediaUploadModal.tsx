@@ -149,16 +149,14 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 const { data: publicUrlData } = client.storage.from('gkn-media').getPublicUrl(storagePath);
                 finalUrl = publicUrlData.publicUrl;
               } else {
-                console.warn('[MediaUploadModal] Storage upload error, falling back to local reader:', uploadError);
+                throw new Error(uploadError.message || 'Media storage upload failed.');
               }
             }
           }
 
-          if (!finalUrl && filePreview) {
-            finalUrl = filePreview;
-          }
         } catch (err) {
           console.error('[MediaUploadModal] Upload error:', err);
+          return;
         } finally {
           setIsUploading(false);
         }
@@ -293,7 +291,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 </span>
                 <span className="text-[10px] text-slate-500">
                   {selectedFile
-                    ? `${(selectedFile.size / 1024).toFixed(0)} KB • Click to choose different file`
+                    ? `${(selectedFile.size / 1024).toFixed(0)} KB â€¢ Click to choose different file`
                     : 'Supports PNG, JPG, WEBP, SVG, PDF up to 10MB'}
                 </span>
               </div>
@@ -455,4 +453,5 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     </div>
   );
 };
+
 
