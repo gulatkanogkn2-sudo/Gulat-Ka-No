@@ -73,19 +73,11 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
             const { data: publicUrlData } = client.storage.from('gkn-media').getPublicUrl(storagePath);
             finalUrl = publicUrlData.publicUrl;
           } else {
-            console.warn('[MediaAssetPickerModal] Storage upload error, falling back to local dataUrl:', uploadError);
+            throw new Error(uploadError.message || 'Media storage upload failed.');
           }
         }
       }
 
-      if (!finalUrl) {
-        // Fallback to data URL
-        finalUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (event) => resolve(event.target?.result as string);
-          reader.readAsDataURL(file);
-        });
-      }
 
       if (finalUrl) {
         const uploaded = mediaLibraryService.uploadAsset({
@@ -411,7 +403,7 @@ export const MediaInput: React.FC<MediaInputProps> = ({
       </div>
 
       <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-        {/* Preview Container — full artwork preview without cropping */}
+        {/* Preview Container â€” full artwork preview without cropping */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="w-24 h-24 sm:w-28 sm:h-20 rounded-xl bg-slate-900 border border-slate-800 p-1 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-inner">
             {isDeviceUploading ? (
@@ -492,4 +484,5 @@ export const MediaInput: React.FC<MediaInputProps> = ({
     </div>
   );
 };
+
 
