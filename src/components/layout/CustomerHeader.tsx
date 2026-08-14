@@ -76,7 +76,7 @@ export const CustomerHeader: React.FC = () => {
   };
 
   const logoUrl = websiteConfig?.branding?.websiteLogo || BRANDING_ASSETS.logo;
-  const brandName = sysBrandName || websiteConfig?.branding?.brandName || APP_CONFIG.name;
+  const brandName = websiteConfig?.branding?.brandName || sysBrandName || APP_CONFIG.name;
   const brandSlogan = websiteConfig?.branding?.brandSlogan || APP_CONFIG.tagline;
 
   return (
@@ -145,4 +145,5 @@ export const CustomerHeader: React.FC = () => {
     </>
   );
 };
+
 
