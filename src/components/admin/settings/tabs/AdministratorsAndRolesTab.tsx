@@ -37,7 +37,7 @@ export const AdministratorsAndRolesTab: React.FC = () => {
               <span className="text-sm font-bold text-white font-mono mt-0.5 block">
                 {user?.fullName || 'Active Administrator'}
               </span>
-              <span className="text-xs text-slate-400 font-mono">{user?.email || 'admin@gknpeptides.com'}</span>
+              <span className="text-xs text-slate-400 font-mono">{user?.email || 'â€”'}</span>
             </div>
 
             <div>
@@ -146,14 +146,14 @@ export const AdministratorsAndRolesTab: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
                 <Lock size={15} className="text-slate-400" />
-                <span>CUSTOMER (Storefront Researcher)</span>
+                <span>CUSTOMER (Storefront Account)</span>
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-slate-400 border border-white/20 font-bold">
                 LEVEL 1
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono">
-              Public storefront access. Browse GroupBuy, OnHand, and MOQ catalogs, place orders, upload payment receipts, and track order progress.
+              Authenticated storefront access. Browse GroupBuy, OnHand, and MOQ catalogs, place orders, upload payment receipts, and track order progress.
             </p>
             <div className="pt-2 border-t border-white/10 flex flex-wrap gap-1.5">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-300">Storefront</span>
@@ -196,3 +196,4 @@ export const AdministratorsAndRolesTab: React.FC = () => {
     </div>
   );
 };
+
