@@ -107,7 +107,7 @@ export const CustomerLayout: React.FC = () => {
 
           <div className="pt-4 border-t border-slate-800/80 max-w-sm mx-auto">
             <p className="text-xs text-slate-500 font-mono">
-              For urgent research logistics inquiries, contact admin support.
+              For urgent order or delivery inquiries, contact admin support.
             </p>
           </div>
         </main>

@@ -74,7 +74,7 @@ export const HomePage: React.FC = () => {
             <div className="relative w-full rounded-2xl overflow-hidden border border-[#00D9FF]/30 shadow-[0_0_30px_rgba(0,217,255,0.15)] bg-gradient-to-r from-[#050810] via-[#0B132B] to-[#050810] flex items-center justify-center min-h-[140px] p-1 sm:p-2 group">
               <SafeImage
                 src={bannerImage}
-                alt="GKN Research Lab Promotional Banner"
+                alt="GKN Store Banner"
                 fallbackSrc={BRANDING_ASSETS.logo}
                 className="w-full h-auto max-h-[500px] object-cover sm:object-contain rounded-xl block transition-transform duration-500 group-hover:scale-[1.003]"
               />
@@ -89,7 +89,7 @@ export const HomePage: React.FC = () => {
           <div className="flex items-center justify-center gap-3">
             <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#00D9FF]/40 max-w-[120px] sm:max-w-[180px]"></div>
             <span className="text-[11px] sm:text-xs font-mono tracking-widest text-[#00D9FF] uppercase font-bold px-3 py-1 rounded-full bg-[#00D9FF]/10 border border-[#00D9FF]/30 shadow-[0_0_12px_rgba(0,217,255,0.15)]">
-              Select Research Channel
+              Choose Your Store
             </span>
             <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#00D9FF]/40 max-w-[120px] sm:max-w-[180px]"></div>
           </div>
@@ -97,7 +97,7 @@ export const HomePage: React.FC = () => {
             CHOOSE YOUR STORE
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto font-mono leading-relaxed">
-            Select a store model based on your research fulfillment timeline, inventory availability, and volume requirements.
+            Select a store based on availability, delivery timing, and order quantity.
           </p>
         </div>
 
@@ -233,14 +233,14 @@ export const HomePage: React.FC = () => {
 
                   {/* Description */}
                   <p className="text-sm text-slate-300 leading-relaxed my-3.5">
-                    Directly available inventory for immediate laboratory dispatch with rapid express shipping turnaround.
+                    Available inventory ready for immediate dispatch with rapid express shipping turnaround.
                   </p>
 
                   {/* Key Highlights */}
                   <div className="space-y-2 py-3 border-t border-b border-white/10 font-mono text-xs text-slate-300">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></span>
-                      <span>Zero waiting time — items packed and shipped immediately</span>
+                      <span>Zero waiting time â€” items packed and shipped immediately</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]"></span>
@@ -313,7 +313,7 @@ export const HomePage: React.FC = () => {
 
                   {/* Description */}
                   <p className="text-sm text-slate-300 leading-relaxed my-3.5">
-                    Bulk quota reservations and institutional volume runs with minimum quantity commitment thresholds.
+                    Bulk reservations and volume orders with minimum quantity commitment thresholds.
                   </p>
 
                   {/* Key Highlights */}
@@ -373,7 +373,7 @@ export const HomePage: React.FC = () => {
                       <ArrowUpRight className="w-4 h-4 text-[#00D9FF] opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed font-mono">
-                      Precision dosage, reconstitution, syringe, and vial calculation tools for researchers.
+                      Precision dosage, reconstitution, syringe, and vial calculation tools.
                     </p>
                   </div>
                 </div>
@@ -460,4 +460,5 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+
 

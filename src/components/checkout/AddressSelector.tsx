@@ -109,7 +109,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
         <div className="p-4 sm:p-5 rounded-xl bg-[#090D16]/90 border border-[#00D9FF]/30 space-y-4">
           <div className="flex items-center gap-2 text-xs font-mono text-[#00D9FF]">
             <Building className="w-4 h-4" />
-            <span>Enter Laboratory / Medical Receiving Location</span>
+            <span>Enter Delivery Address</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -122,7 +122,7 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
                 type="text"
                 value={newAddress.recipientName}
                 onChange={(e) => handleCustomFieldChange('recipientName', e.target.value)}
-                placeholder="Dr. Jane Doe / Receiving Officer"
+                placeholder="Full name"
                 className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 font-mono focus:border-[#00D9FF] focus:outline-none transition-colors"
                 required
               />
@@ -244,3 +244,4 @@ export const AddressSelector: React.FC<AddressSelectorProps> = ({
     </div>
   );
 };
+

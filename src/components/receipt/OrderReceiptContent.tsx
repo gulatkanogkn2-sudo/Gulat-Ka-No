@@ -133,7 +133,7 @@ export const OrderReceiptContent: React.FC<OrderReceiptContentProps> = ({
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
       pdf.setTextColor(148, 163, 184); // Slate 400
-      pdf.text('Official Research Allocation Receipt', marginX + 6, currentY + 16);
+      pdf.text('Official Order Receipt', marginX + 6, currentY + 16);
 
       // Store Badge Box
       pdf.setFillColor(2, 132, 199); // Sky Blue #0284c7
@@ -191,7 +191,7 @@ export const OrderReceiptContent: React.FC<OrderReceiptContentProps> = ({
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(15, 23, 42);
-      pdf.text(order.customerName || 'Researcher', marginX + 4, currentY + 14);
+      pdf.text(order.customerName || 'Customer', marginX + 4, currentY + 14);
 
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
@@ -481,7 +481,7 @@ export const OrderReceiptContent: React.FC<OrderReceiptContentProps> = ({
               {receiptTitle}
             </h2>
           </div>
-          <p className="text-xs text-slate-400">Official Research Allocation Receipt</p>
+          <p className="text-xs text-slate-400">Official Order Receipt</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -569,7 +569,7 @@ export const OrderReceiptContent: React.FC<OrderReceiptContentProps> = ({
             <Building2 className="w-3.5 h-3.5 text-[#8B5CF6]" />
             <span>Customer Details</span>
           </div>
-          <p className="font-bold text-white text-sm">{order.customerName || 'Researcher'}</p>
+          <p className="font-bold text-white text-sm">{order.customerName || 'Customer'}</p>
           {order.customerEmail && <p className="text-slate-400">{order.customerEmail}</p>}
           {order.customerPhone && <p className="text-slate-400">{order.customerPhone}</p>}
           {order.customerCompany && (
@@ -726,4 +726,5 @@ export const OrderReceiptContent: React.FC<OrderReceiptContentProps> = ({
     </div>
   );
 };
+
 

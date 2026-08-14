@@ -510,7 +510,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
     tiers: [
       {
         id: 'STANDARD',
-        name: 'Standard Researcher',
+        name: 'Standard Customer',
         minLifetimeSpendPhp: 0,
         isActive: true,
         isAutoAssignment: true,

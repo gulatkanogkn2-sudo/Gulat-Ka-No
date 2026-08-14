@@ -137,7 +137,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
               </div>
               <div className="text-xs text-slate-400 font-mono flex items-center gap-2 mt-0.5">
                 <span>Code: <strong className="text-cyan-400">{customer.customerCode}</strong></span>
-                <span>•</span>
+                <span>â€¢</span>
                 <span>ID: {customer.id}</span>
               </div>
             </div>
@@ -241,9 +241,9 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                 {/* Customer Stats Cards Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-xl">
-                    <div className="text-[10px] font-mono text-slate-400 uppercase">Qualifying Spending (₱)</div>
+                    <div className="text-[10px] font-mono text-slate-400 uppercase">Qualifying Spending (â‚±)</div>
                     <div className="text-lg font-mono font-bold text-emerald-400 mt-1">
-                      ₱
+                      â‚±
                       {qualifyingSpend.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
@@ -263,7 +263,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                   <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-xl">
                     <div className="text-[10px] font-mono text-slate-400 uppercase">Avg Order Value (AOV)</div>
                     <div className="text-lg font-mono font-bold text-white mt-1">
-                      ₱{customer.stats.averageOrderValue.toFixed(2)}
+                      â‚±{customer.stats.averageOrderValue.toFixed(2)}
                     </div>
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5">Per Transaction</div>
                   </div>
@@ -321,7 +321,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                     <div>
                       <span className="text-slate-500 block text-[10px]">QUALIFYING SPENDING:</span>
                       <span className="font-bold text-emerald-400">
-                        ₱{qualifyingSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        â‚±{qualifyingSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
 
@@ -336,8 +336,8 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                       <span className="text-slate-500 block text-[10px]">REMAINING NEEDED:</span>
                       <span className="font-bold text-amber-300">
                         {tierProgress.remainingSpendPhp > 0
-                          ? `₱${tierProgress.remainingSpendPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                          : '₱0.00 (Qualified)'}
+                          ? `â‚±${tierProgress.remainingSpendPhp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : 'â‚±0.00 (Qualified)'}
                       </span>
                     </div>
                   </div>
@@ -355,7 +355,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                         />
                       </div>
                       <p className="text-[10px] font-mono text-slate-500 pt-0.5">
-                        Qualifying threshold: ₱
+                        Qualifying threshold: â‚±
                         {tierProgress.nextTierThresholdPhp.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
@@ -387,7 +387,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
               <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <h4 className="font-mono text-xs font-bold uppercase text-slate-200">
-                    Researcher Profile & Verification
+                    Customer Profile & Verification
                   </h4>
                   <CustomerVerificationBadge status={customer.verificationStatus} />
                 </div>
@@ -407,7 +407,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                   </div>
                   <div>
                     <span className="text-slate-500 font-mono block text-[10px]">Company / Institution:</span>
-                    <span className="text-slate-200">{customer.companyOrInstitution || 'Independent Researcher'}</span>
+                    <span className="text-slate-200">{customer.companyOrInstitution || 'Individual Customer'}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 font-mono block text-[10px]">Registration Date:</span>
@@ -455,7 +455,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                         </div>
                         <div className="text-xs text-slate-300">{ord.itemsSummary}</div>
                         <div className="text-[11px] text-slate-500 font-mono">
-                          Date: {new Date(ord.orderDate).toLocaleDateString()} • {ord.itemCount} Items
+                          Date: {new Date(ord.orderDate).toLocaleDateString()} â€¢ {ord.itemCount} Items
                         </div>
                       </div>
 
@@ -522,7 +522,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
               <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
                 <h4 className="font-mono text-xs font-bold uppercase text-slate-300 flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-emerald-400" />
-                  <span>Billing & Institutional Settlement Info</span>
+                  <span>Billing & Payment Information</span>
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
@@ -533,7 +533,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 font-mono block text-[10px]">Institutional Tax ID (TIN):</span>
+                    <span className="text-slate-500 font-mono block text-[10px]">Tax ID (TIN):</span>
                     <span className="text-slate-200 font-mono">
                       {customer.billingInfo.taxId || 'N/A'}
                     </span>
@@ -576,7 +576,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                           </div>
                         )}
                         <div className="text-[10px] text-slate-500 font-mono uppercase mt-1">
-                          Vault: {w.storeType} • Saved {new Date(w.addedDate).toLocaleDateString()}
+                          Vault: {w.storeType} â€¢ Saved {new Date(w.addedDate).toLocaleDateString()}
                         </div>
                       </div>
                       {w.estimatedPrice && (
@@ -670,7 +670,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                     <div>
                       <div className="text-slate-200 font-bold">{log.ipAddress}</div>
                       <div className="text-[10px] text-slate-400">
-                        {log.location} • {log.device}
+                        {log.location} â€¢ {log.device}
                       </div>
                     </div>
                     <div className="text-right">
@@ -743,3 +743,4 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
     </div>
   );
 };
+

@@ -69,7 +69,7 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-amber-400" />
             <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-slate-100">
-              Edit Researcher Profile â€” {customer.customerCode}
+              Edit Customer Profile â€” {customer.customerCode}
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">

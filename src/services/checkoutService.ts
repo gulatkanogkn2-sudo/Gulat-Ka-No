@@ -109,7 +109,7 @@ export const DEFAULT_CUSTOMER_FIELDS: CustomerFormFieldDefinition[] = [
   {
     id: 'fullName',
     name: 'fullName',
-    label: 'Full Name / Authorized Researcher',
+    label: 'Full Name',
     placeholder: 'Dr. Alexander Vance',
     type: 'text',
     required: true,
@@ -248,7 +248,7 @@ export const CONFIGURABLE_FEE_RULES: Record<string, CheckoutFeeRule[]> = {
     },
     {
       id: 'fee-gb-mfr-freight',
-      displayName: 'Manufacturer → PH Import Logistics',
+      displayName: 'Manufacturer â†’ PH Import Logistics',
       enabled: true,
       calculationType: 'fixed',
       value: 5.0,
@@ -556,4 +556,5 @@ export class CheckoutService {
     };
   }
 }
+
 

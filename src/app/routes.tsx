@@ -122,6 +122,10 @@ export const AppRoutes: React.FC = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/account" element={<AccountPage />} />
           </Route>
+
+          {/* Keep unknown/internal URLs behind the same private application gate. */}
+          <Route path="/404" element={<NotFoundPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
         {/* Admin Routes with Admin Layout */}
@@ -160,10 +164,8 @@ export const AppRoutes: React.FC = () => {
           </Route>
         </Route>
 
-        {/* Dedicated 404 Route & Catch-all Fallback */}
-        <Route path="/404" element={<NotFoundPage />} />
-        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   );
 };
+

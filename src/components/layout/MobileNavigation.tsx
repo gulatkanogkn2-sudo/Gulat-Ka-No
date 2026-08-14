@@ -56,6 +56,9 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
   const { openDrawer, totalItemCount } = useCart();
   const [showAdminButton, setShowAdminButton] = useState<boolean>(true);
   const [websiteConfig, setWebsiteConfig] = useState<WebsiteConfig | null>(null);
+  const [systemBrandName, setSystemBrandName] = useState(
+    () => systemSettingsService.getSettings()?.general?.brandName
+  );
 
   useEffect(() => {
     WebsiteManagerService.getWebsiteConfig().then(setWebsiteConfig);
@@ -66,12 +69,13 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
   }, []);
 
   const mobileLogoUrl = websiteConfig?.branding?.mobileLogo || websiteConfig?.branding?.websiteLogo || BRANDING_ASSETS.logo;
-  const brandName = websiteConfig?.branding?.brandName || APP_CONFIG.name;
+  const brandName = websiteConfig?.branding?.brandName || systemBrandName || APP_CONFIG.name;
   const brandSlogan = websiteConfig?.branding?.brandSlogan || APP_CONFIG.tagline;
 
   useEffect(() => {
     const unsubscribe = systemSettingsService.subscribe((settings) => {
       setShowAdminButton(settings.adminVisibility?.showAdminButton ?? true);
+      setSystemBrandName(settings.general?.brandName);
     });
     return () => unsubscribe();
   }, []);
@@ -436,10 +440,11 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
         {/* Footer info inside Drawer */}
         <div className="p-4 border-t border-white/10 bg-[#0A0F1D]/80 flex-shrink-0 text-center">
           <p className="text-[11px] font-mono text-slate-400">
-            {APP_CONFIG.name} Platform • Research Use Only
+            {brandName} â€¢ Private Customer Hub
           </p>
         </div>
       </div>
     </div>
   );
 };
+

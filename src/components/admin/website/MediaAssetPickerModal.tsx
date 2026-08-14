@@ -26,6 +26,7 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
   const [selectedAssetUrl, setSelectedAssetUrl] = useState<string>(currentValue || '');
   const [customUrlInput, setCustomUrlInput] = useState<string>('');
   const [assets, setAssets] = useState<MediaAssetItem[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const modalFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -50,8 +51,6 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
     'QR Codes',
     'Documents',
   ];
-
-  const [isUploading, setIsUploading] = useState(false);
 
   const handleModalFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,7 +117,7 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
 
   const handleConfirm = () => {
     const finalUrl = customUrlInput.trim() || selectedAssetUrl;
-    if (finalUrl) {
+    if (finalUrl && !finalUrl.startsWith('data:') && !finalUrl.startsWith('blob:')) {
       onSelectMedia(finalUrl);
       onClose();
     }
@@ -280,7 +279,7 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
               type="text"
               value={customUrlInput}
               onChange={(e) => setCustomUrlInput(e.target.value)}
-              placeholder="https://... or data:image/..."
+              placeholder="https://... or /path/to/asset"
               className="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-xs font-mono text-cyan-300 placeholder-slate-600 focus:outline-none"
             />
           </div>
@@ -294,7 +293,11 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedAssetUrl && !customUrlInput.trim()}
+              disabled={
+                (!selectedAssetUrl && !customUrlInput.trim()) ||
+                customUrlInput.trim().startsWith('data:') ||
+                customUrlInput.trim().startsWith('blob:')
+              }
               className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow-lg shadow-cyan-500/20 flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" /> Apply Asset
@@ -351,18 +354,13 @@ export const MediaInput: React.FC<MediaInputProps> = ({
             const { data: publicUrlData } = client.storage.from('gkn-media').getPublicUrl(storagePath);
             finalUrl = publicUrlData.publicUrl;
           } else {
-            console.warn('[MediaInput] Storage upload error, falling back to local dataUrl:', uploadError);
+            throw new Error(`Supabase Storage upload failed: ${uploadError.message}`);
           }
         }
       }
 
       if (!finalUrl) {
-        // Fallback to data URL
-        finalUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (event) => resolve(event.target?.result as string);
-          reader.readAsDataURL(file);
-        });
+        throw new Error('Media upload requires configured Supabase Storage.');
       }
 
       if (finalUrl) {
@@ -484,5 +482,4 @@ export const MediaInput: React.FC<MediaInputProps> = ({
     </div>
   );
 };
-
 
