@@ -154,7 +154,7 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
   },
   footer: {
     footerLogo: '',
-    copyrightText: 'Â© 2026 GKN V2 Laboratory Sourcing Platform. All rights reserved. For research purposes only.',
+    copyrightText: '\u00A9 2026 GKN V2 Laboratory Sourcing Platform. All rights reserved. For research purposes only.',
     contactEmail: '',
     contactPhone: '',
     address: '',
