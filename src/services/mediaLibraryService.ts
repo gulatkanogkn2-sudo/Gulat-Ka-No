@@ -7,6 +7,7 @@ import {
   ExportFormat,
   SupportedFileType,
 } from '../types/mediaLibrary';
+import { supabaseUrl } from '../lib/supabase';
 
 const STORAGE_KEY = 'gkn_media_library_v2';
 
@@ -942,9 +943,10 @@ class MediaLibraryService {
   }
 
   public getSupabaseStorageConfig() {
+    const baseUrl = supabaseUrl || 'https://pyyawyqnwnsottkcrllm.supabase.co';
     return {
-      bucketName: 'gkn-media-assets',
-      endpoint: 'https://ais-dev-k54ag55td4j3gkwyk2rv3s.supabase.co/storage/v1',
+      bucketName: 'gkn-media',
+      endpoint: `${baseUrl}/storage/v1`,
       isLive: true,
       uploadPathPrefix: 'supabase://storage/gkn-media/',
       supportedTypes: ['JPG', 'JPEG', 'PNG', 'WEBP', 'SVG', 'PDF', 'DOCX', 'XLSX', 'ZIP', 'ICO'],

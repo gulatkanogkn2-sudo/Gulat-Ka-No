@@ -29,7 +29,7 @@ export const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
     green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-500 hover:shadow-[0_0_12px_rgba(16,185,129,0.35)]',
   };
 
-  const baseClasses = `relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${variantStyles[variant]} ${className}`;
+  const baseClasses = `relative w-10 h-10 sm:w-11 sm:h-11 min-h-[44px] min-w-[44px] rounded-xl border flex items-center justify-center transition-all cursor-pointer flex-shrink-0 ${variantStyles[variant]} ${className}`;
 
   const content = (
     <>

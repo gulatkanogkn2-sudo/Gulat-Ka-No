@@ -81,12 +81,12 @@ export const CustomerHeader: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 glass-panel border-b border-white/10 bg-[rgba(5,8,16,0.92)] backdrop-blur-xl">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-[72px] sm:h-[78px] flex items-center justify-between gap-4 w-full">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050812]/95 backdrop-blur-xl transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] sm:h-[74px] flex items-center justify-between gap-3 sm:gap-4 w-full">
           {/* Left Section: Brand Logo & Title */}
-          <div className="flex items-center flex-shrink-0">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 rounded-xl bg-[#00D9FF]/20 border border-[#00D9FF]/50 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(0,217,255,0.3)] group-hover:shadow-[0_0_20px_rgba(0,217,255,0.5)] transition-all overflow-hidden bg-[#050810]">
+          <div className="flex items-center flex-shrink-0 min-w-0">
+            <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none focus:ring-1 focus:ring-[#00D9FF] rounded-xl p-0.5">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 rounded-xl bg-[#00D9FF]/10 border border-[#00D9FF]/30 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(0,217,255,0.15)] group-hover:shadow-[0_0_20px_rgba(0,217,255,0.35)] group-hover:border-[#00D9FF]/60 transition-all overflow-hidden bg-[#070B16]">
                 <SafeImage
                   src={logoUrl}
                   alt={brandName}
@@ -94,11 +94,11 @@ export const CustomerHeader: React.FC = () => {
                   className="w-full h-full object-contain rounded-lg"
                 />
               </div>
-              <div className="flex flex-col justify-center overflow-hidden">
-                <span className="text-base sm:text-lg leading-tight font-bold tracking-wider text-[#00D9FF] drop-shadow-[0_0_8px_rgba(0,217,255,0.4)] whitespace-nowrap truncate">
+              <div className="flex flex-col justify-center overflow-hidden min-w-0">
+                <span className="text-sm sm:text-base md:text-lg leading-tight font-black tracking-wider text-white group-hover:text-[#00D9FF] transition-colors whitespace-nowrap truncate font-sans">
                   {brandName}
                 </span>
-                <span className="text-[10px] leading-tight text-[#FF2ED1] font-mono tracking-widest uppercase drop-shadow-[0_0_5px_rgba(255,46,209,0.4)] mt-0.5 whitespace-nowrap truncate">
+                <span className="text-[9px] sm:text-[10px] leading-tight text-[#00D9FF]/90 font-mono tracking-widest uppercase mt-0.5 whitespace-nowrap truncate font-semibold">
                   {brandSlogan}
                 </span>
               </div>
@@ -106,22 +106,23 @@ export const CustomerHeader: React.FC = () => {
           </div>
 
           {/* Right Section: Install App, Shopping Cart & Primary Hamburger Trigger */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {deferredPrompt && !isInstalled && (
               <button
                 type="button"
                 onClick={handleInstallClick}
-                className="h-10 px-2.5 sm:px-4 bg-[#00D9FF]/10 hover:bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/60 rounded-xl font-mono text-[10px] sm:text-xs font-bold tracking-wider transition-all duration-300 flex items-center gap-1.5 sm:gap-2 shadow-[0_0_15px_rgba(0,217,255,0.2)] active:scale-95 whitespace-nowrap"
-                aria-label="Install App"
+                className="h-10 sm:h-11 min-h-[44px] px-3 sm:px-4 bg-[#00D9FF]/10 hover:bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/40 hover:border-[#00D9FF] rounded-xl font-mono text-xs font-bold tracking-wider transition-all duration-300 flex items-center gap-1.5 sm:gap-2 shadow-[0_0_12px_rgba(0,217,255,0.15)] active:scale-95 cursor-pointer whitespace-nowrap"
+                aria-label="Install GKN Web App"
               >
                 <Download className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden min-[390px]:inline">INSTALL APP</span>
+                <span className="hidden sm:inline">INSTALL</span>
+                <span className="hidden md:inline"> APP</span>
               </button>
             )}
 
             <HeaderIconButton
               icon={<ShoppingCart className="w-5 h-5 text-[#00D9FF]" />}
-              tooltip="Cart"
+              tooltip="Shopping Cart"
               variant="cyan"
               onClick={() => openDrawer()}
               badgeCount={totalItemCount > 0 ? totalItemCount : undefined}
@@ -130,7 +131,7 @@ export const CustomerHeader: React.FC = () => {
 
             <HeaderIconButton
               icon={<Menu className="w-5 h-5 text-[#00D9FF]" />}
-              tooltip="Open Menu"
+              tooltip="Main Menu"
               variant="cyan"
               onClick={() => setIsMenuOpen(true)}
               ariaLabel="Open main navigation menu"

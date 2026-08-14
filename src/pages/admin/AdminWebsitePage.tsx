@@ -274,7 +274,7 @@ export const AdminWebsitePage: React.FC = () => {
             <BrandingEditor
               branding={config.branding}
               onChange={(updated) =>
-                WebsiteManagerService.updateBranding(updated).then(setConfig)
+                setConfig((prev) => (prev ? { ...prev, branding: { ...prev.branding, ...updated } } : prev))
               }
             />
           )}
@@ -282,7 +282,9 @@ export const AdminWebsitePage: React.FC = () => {
           {activeTab === 'hero' && (
             <HeroEditor
               hero={config.hero}
-              onChange={(updated) => WebsiteManagerService.updateHero(updated).then(setConfig)}
+              onChange={(updated) =>
+                setConfig((prev) => (prev ? { ...prev, hero: { ...prev.hero, ...updated } } : prev))
+              }
             />
           )}
 
@@ -290,7 +292,7 @@ export const AdminWebsitePage: React.FC = () => {
             <StoreCardsEditor
               storeCards={config.storeCards}
               onChange={(updated) =>
-                WebsiteManagerService.updateStoreCards(updated).then(setConfig)
+                setConfig((prev) => (prev ? { ...prev, storeCards: updated } : prev))
               }
             />
           )}
@@ -298,7 +300,9 @@ export const AdminWebsitePage: React.FC = () => {
           {activeTab === 'footer' && (
             <FooterEditor
               footer={config.footer}
-              onChange={(updated) => WebsiteManagerService.updateFooter(updated).then(setConfig)}
+              onChange={(updated) =>
+                setConfig((prev) => (prev ? { ...prev, footer: { ...prev.footer, ...updated } } : prev))
+              }
             />
           )}
 
@@ -309,7 +313,9 @@ export const AdminWebsitePage: React.FC = () => {
           {activeTab === 'seo' && (
             <SEOEditor
               seo={config.seo}
-              onChange={(updated) => WebsiteManagerService.updateSEO(updated).then(setConfig)}
+              onChange={(updated) =>
+                setConfig((prev) => (prev ? { ...prev, seo: { ...prev.seo, ...updated } } : prev))
+              }
             />
           )}
         </div>

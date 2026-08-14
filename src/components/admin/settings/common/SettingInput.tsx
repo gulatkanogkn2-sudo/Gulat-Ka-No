@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export interface SettingInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string;
@@ -26,8 +26,39 @@ export const SettingInput: React.FC<SettingInputProps> = ({
   placeholder,
   disabled,
   className = '',
+  onFocus,
+  onBlur,
   ...props
 }) => {
+  const [localValue, setLocalValue] = useState<string>(() =>
+    value !== undefined && value !== null ? String(value) : ''
+  );
+  const isFocusedRef = useRef(false);
+
+  // Synchronize from parent value when not actively focused / typing
+  useEffect(() => {
+    if (!isFocusedRef.current) {
+      setLocalValue(value !== undefined && value !== null ? String(value) : '');
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalValue(val);
+    onChange(val);
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = true;
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = false;
+    setLocalValue(value !== undefined && value !== null ? String(value) : '');
+    onBlur?.(e);
+  };
+
   return (
     <div className="flex flex-col space-y-1.5 w-full">
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-x-2 gap-y-0.5 min-h-[22px]">
@@ -48,8 +79,10 @@ export const SettingInput: React.FC<SettingInputProps> = ({
         )}
         <input
           type={type}
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           placeholder={placeholder}
           disabled={disabled}
           className={`w-full h-10 bg-[#050810] border border-white/10 text-white text-xs px-3.5 transition-all focus:outline-none focus:border-[#00D9FF] focus:ring-1 focus:ring-[#00D9FF] ${

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -17,9 +17,44 @@ export const Input: React.FC<InputProps> = ({
   className = '',
   id,
   disabled,
+  value,
+  onChange,
+  onFocus,
+  onBlur,
   ...props
 }) => {
   const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+  const isControlled = value !== undefined;
+  const [localValue, setLocalValue] = useState<string | number | readonly string[]>(() =>
+    value !== undefined && value !== null ? value : ''
+  );
+  const isFocusedRef = useRef(false);
+
+  useEffect(() => {
+    if (isControlled && !isFocusedRef.current) {
+      setLocalValue(value !== undefined && value !== null ? value : '');
+    }
+  }, [value, isControlled]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isControlled) {
+      setLocalValue(e.target.value);
+    }
+    onChange?.(e);
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = true;
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = false;
+    if (isControlled) {
+      setLocalValue(value !== undefined && value !== null ? value : '');
+    }
+    onBlur?.(e);
+  };
 
   return (
     <div className="w-full space-y-1.5">
@@ -42,6 +77,10 @@ export const Input: React.FC<InputProps> = ({
         <input
           id={inputId}
           disabled={disabled}
+          value={isControlled ? localValue : undefined}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           className={`w-full bg-[var(--bg-obsidian)] text-slate-100 placeholder-slate-500 text-sm rounded-lg px-4 py-2.5 min-h-[44px] transition-all duration-300 border shadow-inner ${
             error
               ? 'border-red-500/50 focus:border-red-400 focus:ring-1 focus:ring-red-500 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]'
