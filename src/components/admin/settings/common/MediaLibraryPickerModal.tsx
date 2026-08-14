@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { QrCode, Search, Image as ImageIcon, Check, X, Upload } from 'lucide-react';
+import { mediaLibraryService } from '../../../../services/mediaLibraryService';
+import { getSupabaseClient, isSupabaseConfigured } from '../../../../lib/supabase';
 
 export interface MediaLibraryPickerModalProps {
   isOpen: boolean;
@@ -7,41 +9,6 @@ export interface MediaLibraryPickerModalProps {
   onSelect: (media: { id: string; url: string; name: string }) => void;
   currentMediaId?: string;
 }
-
-const SAMPLE_MEDIA_QR_CODES = [
-  {
-    id: 'media-qr-gcash-001',
-    name: 'GCash Official QR (GKN Operations)',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-    dimensions: '1080x1080 px',
-    fileSize: '240 KB',
-    category: 'QR Codes',
-  },
-  {
-    id: 'media-qr-maya-001',
-    name: 'Maya Wallet Merchant QR Code',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-    dimensions: '1080x1080 px',
-    fileSize: '310 KB',
-    category: 'QR Codes',
-  },
-  {
-    id: 'media-qr-bdo-001',
-    name: 'BDO Unibank Direct Instapay QR',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-    dimensions: '1200x1200 px',
-    fileSize: '410 KB',
-    category: 'QR Codes',
-  },
-  {
-    id: 'media-qr-usdt-001',
-    name: 'USDT TRC20 Wallet Address QR Code',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-    dimensions: '1000x1000 px',
-    fileSize: '280 KB',
-    category: 'QR Codes',
-  },
-];
 
 export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = ({
   isOpen,
@@ -55,26 +22,32 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        onSelect({
-          id: `uploaded-qr-${Date.now()}`,
-          url: dataUrl,
-          name: file.name,
-        });
-        onClose();
-      }
-    };
-    reader.readAsDataURL(file);
+    if (!isSupabaseConfigured) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+    const extension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'png';
+    const storagePath = `qr/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${extension}`;
+    const { error } = await client.storage.from('gkn-media').upload(storagePath, file, {
+      contentType: file.type || 'image/png',
+      upsert: false,
+    });
+    if (error) return;
+    const { data } = client.storage.from('gkn-media').getPublicUrl(storagePath);
+    const asset = mediaLibraryService.uploadAsset({
+      name: file.name,
+      url: data.publicUrl,
+      category: 'QR Codes',
+      fileSize: `${Math.ceil(file.size / 1024)} KB`,
+      fileSizeBytes: file.size,
+    });
+    onSelect({ id: asset.id, url: asset.url, name: asset.name });
+    onClose();
   };
 
-  const filteredMedia = SAMPLE_MEDIA_QR_CODES.filter(
+  const filteredMedia = mediaLibraryService.getAssets({ category: 'QR Codes', isArchived: false }).filter(
     (item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -162,7 +135,7 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-semibold text-white truncate">{media.name}</h4>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{media.dimensions} • {media.fileSize}</p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{media.dimensions} â€¢ {media.fileSize}</p>
                     <p className="text-[9px] text-[#00D9FF] font-mono uppercase mt-0.5">{media.id}</p>
                   </div>
                 </div>
@@ -218,3 +191,4 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
     </div>
   );
 };
+
