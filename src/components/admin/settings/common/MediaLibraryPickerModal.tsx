@@ -1,7 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { QrCode, Search, Image as ImageIcon, Check, X, Upload } from 'lucide-react';
 import { mediaLibraryService } from '../../../../services/mediaLibraryService';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../../lib/supabase';
+import { MediaAssetItem } from '../../../../types/mediaLibrary';
+import { MediaThumbnail } from '../../media/MediaThumbnail';
 
 export interface MediaLibraryPickerModalProps {
   isOpen: boolean;
@@ -18,7 +20,15 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [customUrl, setCustomUrl] = useState('');
+  const [assets, setAssets] = useState<MediaAssetItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    mediaLibraryService.refreshFromSupabase()
+      .then(() => setAssets(mediaLibraryService.getAssets({ category: 'QR Codes', isArchived: false })))
+      .catch((error) => console.error('[MediaLibraryPickerModal] Failed to load assets:', error));
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -36,18 +46,20 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
     });
     if (error) return;
     const { data } = client.storage.from('gkn-media').getPublicUrl(storagePath);
-    const asset = mediaLibraryService.uploadAsset({
+    const asset = await mediaLibraryService.uploadAsset({
       name: file.name,
       url: data.publicUrl,
       category: 'QR Codes',
       fileSize: `${Math.ceil(file.size / 1024)} KB`,
       fileSizeBytes: file.size,
+      mimeType: file.type,
+      storagePath: `supabase://storage/gkn-media/${storagePath}`,
     });
     onSelect({ id: asset.id, url: asset.url, name: asset.name });
     onClose();
   };
 
-  const filteredMedia = mediaLibraryService.getAssets({ category: 'QR Codes', isArchived: false }).filter(
+  const filteredMedia = assets.filter(
     (item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -126,7 +138,7 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
                   }`}
                 >
                   <div className="w-12 h-12 rounded-lg bg-slate-900 overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center relative">
-                    <img src={media.url} alt={media.name} className="w-full h-full object-cover" />
+                    <MediaThumbnail src={media.url} alt={media.name} className="w-full h-full object-cover" />
                     {isSelected && (
                       <div className="absolute inset-0 bg-[#00D9FF]/30 flex items-center justify-center text-white">
                         <Check size={16} />
@@ -135,7 +147,7 @@ export const MediaLibraryPickerModal: React.FC<MediaLibraryPickerModalProps> = (
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-semibold text-white truncate">{media.name}</h4>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{media.dimensions} â€¢ {media.fileSize}</p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{media.dimensions} • {media.fileSize}</p>
                     <p className="text-[9px] text-[#00D9FF] font-mono uppercase mt-0.5">{media.id}</p>
                   </div>
                 </div>

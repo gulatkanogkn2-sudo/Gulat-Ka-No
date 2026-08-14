@@ -100,9 +100,9 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
             value={settings.currency}
             onChange={(val) => handleChange('currency', val)}
             options={[
-              { value: 'PHP', label: 'Philippine Peso (PHP â‚±)', description: 'Primary' },
+              { value: 'PHP', label: 'Philippine Peso (PHP ₱)', description: 'Primary' },
               { value: 'USD', label: 'US Dollar (USD $)', description: 'Secondary' },
-              { value: 'EUR', label: 'Euro (EUR â‚¬)', description: 'Euro' },
+              { value: 'EUR', label: 'Euro (EUR €)', description: 'Euro' },
               { value: 'USDT', label: 'Tether Crypto (USDT)', description: 'Crypto' },
             ]}
             helperText="Primary operating currency for store prices, cart totals, and receipts."
@@ -126,10 +126,10 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
         {/* Currency Conversion Grid */}
         <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
           <SettingInput
-            label="USD â†’ PHP Exchange Rate (1 USD = â‚± PHP)"
+            label="USD → PHP Exchange Rate (1 USD = ₱ PHP)"
             type="number"
             step="0.0001"
-            prefixText="â‚±"
+            prefixText="₱"
             suffixText="PHP / $1 USD"
             value={settings.usdToPhpExchangeRate ?? 57.0833}
             onChange={(val) => {
@@ -268,7 +268,7 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
             </div>
 
             <div className="text-sm font-mono font-extrabold text-white tracking-wide pt-1">
-              Active GKN V2 Production Build
+              Active GKN Production Build
             </div>
 
             <p className="text-[11px] text-slate-500 font-mono">

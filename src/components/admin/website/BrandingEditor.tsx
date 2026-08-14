@@ -47,7 +47,7 @@ export const BrandingEditor: React.FC<BrandingEditorProps> = ({ branding, onChan
           <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs space-y-1">
             <div className="text-slate-400 text-[11px] font-mono">Brand Preview:</div>
             <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> {branding.brandName || 'GKN V2'}
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> {branding.brandName || 'GKN'}
             </div>
           </div>
 
@@ -102,7 +102,7 @@ export const BrandingEditor: React.FC<BrandingEditorProps> = ({ branding, onChan
                 placeholder="Title shown in browser tab..."
                 className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none"
               />
-              <span className="text-[10px] text-slate-500 block mt-1 font-mono">Example: GKN V2 â€” Premium Peptide Research & Ordering</span>
+              <span className="text-[10px] text-slate-500 block mt-1 font-mono">Example: GKN — Private Customer Hub</span>
             </div>
 
             <div>

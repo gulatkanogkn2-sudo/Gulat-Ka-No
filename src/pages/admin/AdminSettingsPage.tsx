@@ -259,7 +259,7 @@ export const AdminSettingsPage: React.FC = () => {
                 System Settings <span className="text-[#00D9FF] text-xs font-mono">V2.0</span>
               </h1>
               <p className="text-xs text-slate-400">
-                Centralized configuration for GKN V2 platform behavior, business rules, checkout, orders, security, and administration.
+                Centralized configuration for GKN business rules, checkout, orders, security, and administration.
               </p>
             </div>
           </div>
@@ -441,7 +441,7 @@ export const AdminSettingsPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-400">
-              Paste valid SystemSettings JSON object exported from GKN V2.
+              Paste a valid SystemSettings JSON object exported from GKN.
             </p>
 
             <textarea
@@ -490,3 +490,4 @@ export const AdminSettingsPage: React.FC = () => {
     </div>
   );
 };
+

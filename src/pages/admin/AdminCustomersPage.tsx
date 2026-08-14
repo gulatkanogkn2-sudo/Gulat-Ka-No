@@ -142,7 +142,7 @@ export const AdminCustomersPage: React.FC = () => {
     const count = await CustomerManagementService.bulkUpdateStatus(selectedCustomerIds, status);
     setSelectedCustomerIds([]);
     await loadCustomers();
-    showToast(`Successfully updated account status to ${status} for ${count} researcher(s).`);
+    showToast(`Successfully updated account status to ${status} for ${count} customer(s).`);
   };
 
   const handleBulkTierUpdate = async (tier: CustomerTier) => {
@@ -150,7 +150,7 @@ export const AdminCustomersPage: React.FC = () => {
     const count = await CustomerManagementService.bulkUpdateTier(selectedCustomerIds, tier);
     setSelectedCustomerIds([]);
     await loadCustomers();
-    showToast(`Assigned ${tier} tier to ${count} researcher(s).`);
+    showToast(`Assigned ${tier} tier to ${count} customer(s).`);
   };
 
   const handleBulkExport = (format: 'csv' | 'excel' | 'sheets') => {
@@ -236,11 +236,11 @@ export const AdminCustomersPage: React.FC = () => {
               Customer Management
             </h1>
             <span className="px-2.5 py-0.5 bg-cyan-950/70 border border-cyan-500/40 text-cyan-400 text-xs font-mono font-semibold rounded">
-              Module 4.4
+              Registered Customers
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Centralized directory for researcher accounts, KYC clearance, shipping destinations, tier assignments, and history.
+            Customer accounts, verification status, delivery details, tiers, and order history.
           </p>
         </div>
 
@@ -345,3 +345,4 @@ export const AdminCustomersPage: React.FC = () => {
     </div>
   );
 };
+

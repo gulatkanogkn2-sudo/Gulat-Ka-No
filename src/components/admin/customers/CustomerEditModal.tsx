@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Save, User, Building, Phone, Mail, ShieldCheck, Crown } from 'lucide-react';
 import {
   CustomerDetail,
@@ -6,6 +6,7 @@ import {
   CustomerTier,
   CustomerVerificationStatus,
 } from '../../../types/customer';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface CustomerEditModalProps {
   customer: CustomerDetail | null;
@@ -18,24 +19,42 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
   onClose,
   onSave,
 }) => {
-  if (!customer) return null;
-
-  const [name, setName] = useState(customer.name);
-  const [email, setEmail] = useState(customer.email);
-  const [phone, setPhone] = useState(customer.phone);
+  const { user } = useAuth();
+  const [name, setName] = useState(customer?.name || '');
+  const [email, setEmail] = useState(customer?.email || '');
+  const [phone, setPhone] = useState(customer?.phone || '');
   const [companyOrInstitution, setCompanyOrInstitution] = useState(
-    customer.companyOrInstitution || ''
+    customer?.companyOrInstitution || ''
   );
-  const [status, setStatus] = useState<CustomerAccountStatus>(customer.status);
-  const [tier, setTier] = useState<CustomerTier>(customer.tier);
+  const [status, setStatus] = useState<CustomerAccountStatus>(customer?.status || 'ACTIVE');
+  const [role, setRole] = useState<'OWNER' | 'ADMIN' | 'STAFF' | 'CUSTOMER' | 'VIEWER'>(customer?.role || 'CUSTOMER');
+  const [tier, setTier] = useState<CustomerTier>(customer?.tier || 'STANDARD');
   const [isManualTierOverride, setIsManualTierOverride] = useState<boolean>(
-    customer.isManualTierOverride ?? false
+    customer?.isManualTierOverride ?? false
   );
   const [verificationStatus, setVerificationStatus] = useState<CustomerVerificationStatus>(
-    customer.verificationStatus
+    customer?.verificationStatus || 'UNVERIFIED'
   );
-  const [customerNotes, setCustomerNotes] = useState(customer.customerNotes || '');
+  const [customerNotes, setCustomerNotes] = useState(customer?.customerNotes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!customer) return;
+    setName(customer.name);
+    setEmail(customer.email);
+    setPhone(customer.phone);
+    setCompanyOrInstitution(customer.companyOrInstitution || '');
+    setStatus(customer.status);
+    setRole(customer.role || 'CUSTOMER');
+    setTier(customer.tier);
+    setIsManualTierOverride(customer.isManualTierOverride ?? false);
+    setVerificationStatus(customer.verificationStatus);
+    setCustomerNotes(customer.customerNotes || '');
+  }, [customer]);
+
+  if (!customer) return null;
+  const canManageAccess = user?.role === 'OWNER' || user?.role === 'ADMIN';
+  const isOwnerProfile = customer.role === 'OWNER';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +67,8 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
         phone: phone.trim(),
         companyOrInstitution: companyOrInstitution.trim(),
         status,
-        tier,
+        role: isOwnerProfile ? customer.role : role,
+        tier: isOwnerProfile ? customer.tier : tier,
         isManualTierOverride: isTierChanged ? true : isManualTierOverride,
         verificationStatus,
         customerNotes: customerNotes.trim(),
@@ -69,7 +89,7 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-amber-400" />
             <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-slate-100">
-              Edit Customer Profile â€” {customer.customerCode}
+              Edit Customer Profile — {customer.customerCode}
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
@@ -121,7 +141,7 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
 
             <div>
               <label className="block text-slate-300 uppercase tracking-wider mb-1 font-semibold">
-                Company / Institution
+                Company (Optional)
               </label>
               <input
                 type="text"
@@ -132,7 +152,7 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-slate-300 uppercase tracking-wider mb-1 font-semibold">
                 Account Status
@@ -166,6 +186,46 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({
                 <option value="UNVERIFIED">UNVERIFIED</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 uppercase tracking-wider mb-1 font-semibold">
+                Account Role
+              </label>
+              {isOwnerProfile ? (
+                <div className="w-full bg-slate-950 border border-amber-800 rounded-lg p-2.5 text-amber-300">
+                  OWNER — managed directly in Supabase
+                </div>
+              ) : (
+                <select
+                  value={role}
+                  disabled={!canManageAccess}
+                  onChange={(e) => setRole(e.target.value as 'CUSTOMER' | 'STAFF' | 'ADMIN')}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-amber-500 disabled:opacity-60"
+                >
+                  <option value="CUSTOMER">CUSTOMER</option>
+                  <option value="STAFF">STAFF</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-slate-300 uppercase tracking-wider mb-1 font-semibold">
+                Customer Tier
+              </label>
+              <select
+                value={['STANDARD', 'SILVER', 'GOLD', 'VIP'].includes(tier) ? tier : 'STANDARD'}
+                disabled={!canManageAccess || isOwnerProfile}
+                onChange={(e) => setTier(e.target.value as CustomerTier)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-amber-500 disabled:opacity-60"
+              >
+                <option value="STANDARD">STANDARD</option>
+                <option value="SILVER">SILVER</option>
+                <option value="GOLD">GOLD</option>
+                <option value="VIP">VIP</option>
+              </select>
+              <p className="mt-1 text-[10px] text-slate-500">Customer tier is separate from account authorization.</p>
             </div>
           </div>
 

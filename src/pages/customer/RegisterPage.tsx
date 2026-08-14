@@ -49,7 +49,6 @@ export const RegisterPage: React.FC = () => {
         options: {
           data: {
             full_name: fullName,
-            role: 'customer',
           },
         },
       });
@@ -67,7 +66,6 @@ export const RegisterPage: React.FC = () => {
   return (
     <PageContainer
       title="Register Account"
-      description="Create your private GKN V2 customer account."
     >
       <div className="max-w-md mx-auto">
         <Card title="Register Account" variant="glass">
@@ -116,7 +114,6 @@ export const RegisterPage: React.FC = () => {
                 <Input
                   label="Password"
                   type="password"
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -125,7 +122,6 @@ export const RegisterPage: React.FC = () => {
                 <Input
                   label="Confirm Password"
                   type="password"
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required

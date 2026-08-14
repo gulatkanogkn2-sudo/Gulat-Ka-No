@@ -3,6 +3,7 @@ import { X, Search, Image as ImageIcon, Check, Sparkles, Filter, ExternalLink, F
 import { mediaLibraryService } from '../../../services/mediaLibraryService';
 import { MediaAssetItem, MediaCategory } from '../../../types/mediaLibrary';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
+import { MediaThumbnail } from '../media/MediaThumbnail';
 
 export interface MediaAssetPickerModalProps {
   isOpen: boolean;
@@ -31,7 +32,9 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setAssets(mediaLibraryService.getAssets({ isArchived: false }));
+      mediaLibraryService.refreshFromSupabase()
+        .then(() => setAssets(mediaLibraryService.getAssets({ isArchived: false })))
+        .catch((error) => console.error('[MediaAssetPickerModal] Failed to load media assets:', error));
       setSelectedAssetUrl(currentValue || '');
     }
   }, [isOpen, currentValue]);
@@ -59,11 +62,13 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
     setIsUploading(true);
     try {
       let finalUrl = '';
+      let uploadedStoragePath = '';
       if (isSupabaseConfigured) {
         const client = getSupabaseClient();
         if (client) {
           const extension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'png';
           const storagePath = `website/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${extension}`;
+          uploadedStoragePath = storagePath;
           const { error: uploadError } = await client.storage
             .from('gkn-media')
             .upload(storagePath, file, { contentType: file.type || 'image/png', upsert: true });
@@ -79,12 +84,14 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
 
 
       if (finalUrl) {
-        const uploaded = mediaLibraryService.uploadAsset({
+        const uploaded = await mediaLibraryService.uploadAsset({
           name: file.name,
           url: finalUrl,
           category: selectedCategory !== 'all' ? (selectedCategory as MediaCategory) : 'Website',
           fileSize: `${(file.size / 1024).toFixed(0)} KB`,
           fileSizeBytes: file.size,
+          mimeType: file.type,
+          storagePath: `supabase://storage/gkn-media/${uploadedStoragePath}`,
         });
         setAssets(mediaLibraryService.getAssets({ isArchived: false }));
         setSelectedAssetUrl(uploaded.url);
@@ -235,7 +242,7 @@ export const MediaAssetPickerModal: React.FC<MediaAssetPickerModalProps> = ({
                 >
                   <div className="aspect-video bg-slate-900 relative overflow-hidden flex items-center justify-center">
                     {isImage ? (
-                      <img
+                      <MediaThumbnail
                         src={asset.url}
                         alt={asset.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -341,11 +348,13 @@ export const MediaInput: React.FC<MediaInputProps> = ({
     setIsDeviceUploading(true);
     try {
       let finalUrl = '';
+      let uploadedStoragePath = '';
       if (isSupabaseConfigured) {
         const client = getSupabaseClient();
         if (client) {
           const extension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'png';
           const storagePath = `website/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${extension}`;
+          uploadedStoragePath = storagePath;
           const { error: uploadError } = await client.storage
             .from('gkn-media')
             .upload(storagePath, file, { contentType: file.type || 'image/png', upsert: true });
@@ -364,12 +373,14 @@ export const MediaInput: React.FC<MediaInputProps> = ({
       }
 
       if (finalUrl) {
-        mediaLibraryService.uploadAsset({
+        await mediaLibraryService.uploadAsset({
           name: file.name,
           url: finalUrl,
           category: 'Website',
           fileSize: `${(file.size / 1024).toFixed(0)} KB`,
           fileSizeBytes: file.size,
+          mimeType: file.type,
+          storagePath: `supabase://storage/gkn-media/${uploadedStoragePath}`,
         });
         onChange(finalUrl);
       }
@@ -401,7 +412,7 @@ export const MediaInput: React.FC<MediaInputProps> = ({
       </div>
 
       <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-        {/* Preview Container â€” full artwork preview without cropping */}
+        {/* Preview Container — full artwork preview without cropping */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="w-24 h-24 sm:w-28 sm:h-20 rounded-xl bg-slate-900 border border-slate-800 p-1 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-inner">
             {isDeviceUploading ? (

@@ -10,6 +10,7 @@ import {
 } from '../types/customer';
 import { CustomerTierService } from './customerTierService';
 import { fetchCustomers } from './productionService';
+import { getSupabaseClient } from '../lib/supabase';
 
 // Initial Mock Database for Admin Customer Management
 let ADMIN_MOCK_CUSTOMERS: CustomerDetail[] = [
@@ -679,7 +680,7 @@ export class CustomerManagementService {
       id: row.id, customerCode: row.customer_code || row.id.slice(0, 8).toUpperCase(), name: row.full_name,
       email: row.email, phone: row.phone || '', companyOrInstitution: row.company_or_institution || undefined,
       avatarUrl: row.avatar_url || undefined, registrationDate: row.created_at, lastLoginDate: row.last_login_at || row.created_at,
-      status: row.status, tier: row.tier, isManualTierOverride: row.is_manual_tier_override,
+      status: row.status, role: row.role, tier: row.tier, isManualTierOverride: row.is_manual_tier_override,
       qualifyingLifetimeSpending: Number(row.qualifying_lifetime_spending_php), verificationStatus: row.status === 'ACTIVE' ? 'VERIFIED' : 'UNVERIFIED',
       addresses: [], billingInfo: {} as any, wishlist: [], rewardPoints: { currentBalance: row.reward_points, lifetimeEarned: row.reward_points, lifetimeRedeemed: 0, tierProgressPercentage: 0, nextTier: null },
       adminNotes: [], loginActivity: [], orders: [], stats: { lifetimeSpending: Number(row.qualifying_lifetime_spending_php), ordersCompleted: 0, totalOrders: 0, averageOrderValue: 0, favoriteStore: 'N/A', mostPurchasedProduct: 'N/A', lastPurchaseDate: '' },
@@ -799,9 +800,8 @@ export class CustomerManagementService {
    * Fetch single customer by ID
    */
   static async getCustomerById(id: string): Promise<CustomerDetail | null> {
-    const customers = loadCustomersFromStorage();
-    const found = customers.find((c) => c.id === id || c.customerCode === id);
-    return found ? { ...found } : null;
+    const result = await this.getCustomers({ searchQuery: id, page: 1, pageSize: 100 });
+    return result.customers.find((customer) => customer.id === id || customer.customerCode === id) || null;
   }
 
   /**
@@ -811,27 +811,40 @@ export class CustomerManagementService {
     id: string,
     updates: Partial<CustomerDetail>
   ): Promise<CustomerDetail | null> {
-    const customers = loadCustomersFromStorage();
-    const index = customers.findIndex((c) => c.id === id);
-    if (index === -1) return null;
+    const client = getSupabaseClient();
+    if (!client) throw new Error('Supabase is required to update customer profiles.');
+    const { data: currentRow, error: currentError } = await client.from('profiles').select('*').eq('id', id).single();
+    const current: any = currentRow;
+    if (currentError || !current) throw currentError || new Error('Customer profile not found.');
 
-    // If manual tier change is requested, mark isManualTierOverride = true (unless explicitly passed)
-    const isManualTierChange = updates.tier && updates.tier !== customers[index].tier;
+    const isManualTierChange = updates.tier && updates.tier !== current.tier;
     const manualFlag = updates.isManualTierOverride !== undefined
       ? updates.isManualTierOverride
       : isManualTierChange
         ? true
-        : customers[index].isManualTierOverride;
+        : current.is_manual_tier_override;
 
-    customers[index] = {
-      ...customers[index],
-      ...updates,
-      isManualTierOverride: manualFlag,
-    };
+    const payload: Record<string, unknown> = {};
+    if (updates.name !== undefined) payload.full_name = updates.name.trim();
+    if (updates.phone !== undefined) payload.phone = updates.phone.trim();
+    if (updates.companyOrInstitution !== undefined) payload.company_or_institution = updates.companyOrInstitution.trim() || null;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.tier !== undefined) {
+      if (!['STANDARD', 'SILVER', 'GOLD', 'VIP'].includes(updates.tier)) throw new Error('Unsupported customer tier.');
+      payload.tier = updates.tier;
+      payload.is_manual_tier_override = manualFlag;
+    }
+    if (updates.role !== undefined && updates.role !== current.role) {
+      if (current.role === 'OWNER' || updates.role === 'OWNER') throw new Error('OWNER roles are managed directly in Supabase.');
+      if (!['CUSTOMER', 'STAFF', 'ADMIN'].includes(updates.role)) throw new Error('Unsupported account role.');
+      payload.role = updates.role;
+    }
+    payload.updated_at = new Date().toISOString();
 
-    saveCustomersToStorage(customers);
+    const { error } = await client.from('profiles').update(payload as any).eq('id', id);
+    if (error) throw error;
     notifyListeners();
-    return { ...customers[index] };
+    return this.getCustomerById(id);
   }
 
   /**
@@ -998,7 +1011,7 @@ export class CustomerManagementService {
       'Name',
       'Email',
       'Phone',
-      'Institution / Company',
+      'Company',
       'Registration Date',
       'Last Active',
       'Account Status',
@@ -1060,3 +1073,4 @@ export class CustomerManagementService {
     document.body.removeChild(link);
   }
 }
+

@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { MediaAssetItem, MediaCategory, MediaVisibility } from '../../../types/mediaLibrary';
+import { MediaThumbnail } from './MediaThumbnail';
 
 interface MediaDetailDrawerProps {
   asset: MediaAssetItem | null;
@@ -171,7 +172,7 @@ export const MediaDetailDrawer: React.FC<MediaDetailDrawerProps> = ({
           {/* Preview Canvas */}
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-center relative overflow-hidden group">
             {isImage ? (
-              <img
+              <MediaThumbnail
                 src={asset.url}
                 alt={asset.title}
                 className="max-h-64 object-contain rounded-xl"
@@ -404,3 +405,4 @@ export const MediaDetailDrawer: React.FC<MediaDetailDrawerProps> = ({
     </div>
   );
 };
+

@@ -2,13 +2,13 @@ import { SystemSettings } from '../types/systemSettings';
 
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   general: {
-    websiteName: 'GKN V2 â€” Research Laboratory Operations',
-    companyName: 'GKN V2',
-    brandName: 'GKN V2',
+    websiteName: 'GKN — Private Customer Hub',
+    companyName: 'GKN',
+    brandName: 'GKN',
     timezone: 'Asia/Manila (GMT+8)',
     dateFormat: 'YYYY-MM-DD HH:mm',
     currency: 'PHP',
-    currencySymbol: 'â‚±',
+    currencySymbol: '₱',
     language: 'en-US',
     maintenanceMode: false,
     maintenanceTitle: 'Scheduled Maintenance',
@@ -285,7 +285,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
       {
         id: 'ship_free',
         name: 'Free Shipping',
-        description: 'Qualifying orders of â‚±10,000+ receive complimentary delivery.',
+        description: 'Qualifying orders of ₱10,000+ receive complimentary delivery.',
         enabled: true,
         displayOrder: 1,
         availableStores: ['all'],
@@ -425,7 +425,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
       description: 'Triggered when courier confirms package delivery.',
       enabled: true,
       channels: { email: true, sms: false, telegram: false, inApp: true },
-      template: 'Order {{order_ref}} delivered safely. Thank you for choosing GKN V2.',
+      template: 'Order {{order_ref}} delivered safely. Thank you for choosing GKN.',
     },
     adminAlerts: {
       id: 'admin_alerts',
@@ -453,7 +453,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   systemConfig: {
     debugMode: false,
     maintenanceMode: false,
-    maintenanceMessage: 'GKN V2 Platform undergoing scheduled maintenance. Services will resume shortly.',
+    maintenanceMessage: 'GKN is undergoing scheduled maintenance. Service will resume shortly.',
     cacheEnabled: true,
     healthStatus: {
       database: 'healthy',
@@ -523,7 +523,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
         minLifetimeSpendPhp: 10000,
         isActive: true,
         isAutoAssignment: true,
-        description: 'Assigned automatically upon reaching â‚±10,000 qualifying lifetime purchases.',
+        description: 'Assigned automatically upon reaching ₱10,000 qualifying lifetime purchases.',
         badgeColor: 'border-slate-500 bg-slate-800 text-slate-200',
       },
       {
@@ -532,7 +532,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
         minLifetimeSpendPhp: 50000,
         isActive: true,
         isAutoAssignment: true,
-        description: 'Assigned automatically upon reaching â‚±50,000 qualifying lifetime purchases.',
+        description: 'Assigned automatically upon reaching ₱50,000 qualifying lifetime purchases.',
         badgeColor: 'border-amber-500/50 bg-amber-950/40 text-amber-300',
       },
       {
@@ -541,7 +541,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
         minLifetimeSpendPhp: 100000,
         isActive: true,
         isAutoAssignment: true,
-        description: 'Top automatic tier reached at â‚±100,000 qualifying lifetime purchases.',
+        description: 'Top automatic tier reached at ₱100,000 qualifying lifetime purchases.',
         badgeColor: 'border-purple-500/50 bg-purple-950/40 text-purple-300',
       },
       {

@@ -11,6 +11,7 @@ import {
   FileImage,
 } from 'lucide-react';
 import { PaymentVerificationRecord } from '../../../types/paymentVerification';
+import { formatPhpAmount } from '../../../utils/currencyUtils';
 import { PaymentStatusBadge } from './PaymentStatusBadge';
 
 interface PaymentTableProps {
@@ -142,7 +143,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
 
                     {/* Amount */}
                     <td className="py-3 px-4 text-right font-bold text-emerald-400">
-                      ${p.amountPaid.toFixed(2)}
+                      {formatPhpAmount(p.amountPaid)}
                     </td>
 
                     {/* Payment Date */}
@@ -262,3 +263,4 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
     </div>
   );
 };
+

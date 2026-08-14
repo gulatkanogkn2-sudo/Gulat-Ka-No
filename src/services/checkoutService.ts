@@ -115,13 +115,13 @@ export const DEFAULT_CUSTOMER_FIELDS: CustomerFormFieldDefinition[] = [
     required: true,
     visible: true,
     order: 1,
-    helpText: 'Official recipient name for institutional or personal receiving',
+    helpText: 'Name of the person receiving the order',
   },
   {
     id: 'email',
     name: 'email',
     label: 'Email Address (Order Tracking)',
-    placeholder: 'researcher@institution.org',
+    placeholder: 'you@example.com',
     type: 'email',
     required: true,
     visible: true,
@@ -142,7 +142,7 @@ export const DEFAULT_CUSTOMER_FIELDS: CustomerFormFieldDefinition[] = [
   {
     id: 'companyOrInstitution',
     name: 'companyOrInstitution',
-    label: 'Company / Research Institution (Optional)',
+    label: 'Company (Optional)',
     placeholder: 'e.g. Apex BioTech / St. Jude Research Lab',
     type: 'text',
     required: false,
@@ -248,7 +248,7 @@ export const CONFIGURABLE_FEE_RULES: Record<string, CheckoutFeeRule[]> = {
     },
     {
       id: 'fee-gb-mfr-freight',
-      displayName: 'Manufacturer â†’ PH Import Logistics',
+      displayName: 'Manufacturer → PH Import Logistics',
       enabled: true,
       calculationType: 'fixed',
       value: 5.0,

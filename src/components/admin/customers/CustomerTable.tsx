@@ -75,12 +75,12 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                 />
               </th>
               <th className="py-3 px-3 whitespace-nowrap">Customer ID / Code</th>
-              <th className="py-3 px-3 min-w-[200px]">Name & Institution</th>
+              <th className="py-3 px-3 min-w-[200px]">Customer</th>
               <th className="py-3 px-3 text-center whitespace-nowrap">Orders</th>
-              <th className="py-3 px-3 text-right whitespace-nowrap">Qualifying Spending (â‚±)</th>
+              <th className="py-3 px-3 text-right whitespace-nowrap">Qualifying Spending (₱)</th>
               <th className="py-3 px-3 whitespace-nowrap">Account Status</th>
               <th className="py-3 px-3 whitespace-nowrap">Tier</th>
-              <th className="py-3 px-3 whitespace-nowrap">KYC Verification</th>
+              <th className="py-3 px-3 whitespace-nowrap">Verification</th>
               <th className="py-3 px-3 text-right pr-4 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
@@ -170,9 +170,9 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Qualifying Spending (PHP â‚±) */}
+                    {/* Qualifying Spending (PHP ₱) */}
                     <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400 align-middle whitespace-nowrap">
-                      â‚±
+                      ₱
                       {qualifyingSpend.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
@@ -263,7 +263,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       <div className="bg-slate-950 p-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-400 z-10">
         <div>
           Showing Page <strong className="text-white">{currentPage}</strong> of{' '}
-          <strong className="text-white">{totalPages}</strong> ({totalCount} total researchers)
+          <strong className="text-white">{totalPages}</strong> ({totalCount} total customers)
         </div>
 
         <div className="flex items-center gap-1.5">

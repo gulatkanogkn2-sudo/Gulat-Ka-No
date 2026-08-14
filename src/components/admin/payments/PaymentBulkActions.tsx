@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPhpAmount } from '../../../utils/currencyUtils';
 import {
   CheckCircle2,
   XCircle,
@@ -40,10 +41,7 @@ export const PaymentBulkActions: React.FC<PaymentBulkActionsProps> = ({
               {selectedCount} Payment Proof{selectedCount === 1 ? '' : 's'} Selected
             </div>
             <div className="text-[11px] font-mono text-cyan-400">
-              Total Volume: ${totalSelectedVolume.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              Total Volume: {formatPhpAmount(totalSelectedVolume)}
             </div>
           </div>
         </div>
@@ -88,3 +86,4 @@ export const PaymentBulkActions: React.FC<PaymentBulkActionsProps> = ({
     </div>
   );
 };
+

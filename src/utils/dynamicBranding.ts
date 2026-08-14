@@ -8,7 +8,7 @@ import { WebsiteManagerService } from '../services/websiteManagerService';
 export function applyDynamicBranding(branding?: Partial<BrandingSettings>): void {
   if (typeof document === 'undefined') return;
 
-  const brandName = branding?.brandName || 'GKN V2';
+  const brandName = branding?.brandName || 'GKN';
   const browserTitle = branding?.browserTitle || `${brandName} — Premium Peptide Research & Ordering Portal`;
   const faviconUrl = branding?.favicon || '/gkn-logo.svg';
   const description = branding?.browserDescription;
@@ -79,3 +79,4 @@ export function initDynamicBranding(): () => void {
 
   return unsubscribe;
 }
+

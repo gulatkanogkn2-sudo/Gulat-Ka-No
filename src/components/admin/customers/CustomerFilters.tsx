@@ -79,7 +79,7 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
             type="text"
             value={filters.searchQuery || ''}
             onChange={handleSearchChange}
-            placeholder="Search name, email, ID, institution, phone..."
+            placeholder="Search name, email, customer ID, company, phone..."
             className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
           />
         </div>
@@ -190,3 +190,4 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
     </div>
   );
 };
+

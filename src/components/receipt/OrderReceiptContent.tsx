@@ -66,7 +66,7 @@ export const OrderReceiptContent: React.FC<OrderReceiptContentProps> = ({
 
   const storeBadge = getStoreBadge();
   const sysSettings = systemSettingsService.getSettings()?.general;
-  const receiptTitle = (sysSettings?.companyName || sysSettings?.brandName || 'GKN V2 PEPTIDES').toUpperCase();
+  const receiptTitle = (sysSettings?.companyName || sysSettings?.brandName || 'GKN').toUpperCase();
 
   // Helper calculation for PHP amounts based on order snapshot rate
   const toPhp = (usdAmount: number) => usdAmount * rate;

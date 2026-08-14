@@ -43,7 +43,7 @@ export const CustomerLayout: React.FC = () => {
       <div className="min-h-screen bg-[#050810] text-slate-100 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-8 h-8 rounded-full bg-[#00D9FF] animate-ping mx-auto opacity-75" />
-          <p className="text-slate-400 text-sm font-mono tracking-widest uppercase">Loading GKN V2...</p>
+          <p className="text-slate-400 text-sm font-mono tracking-widest uppercase">Loading GKN...</p>
         </div>
       </div>
     );
@@ -114,7 +114,7 @@ export const CustomerLayout: React.FC = () => {
 
         {/* Minimal Footer */}
         <footer className="max-w-5xl mx-auto w-full text-center py-4 text-[11px] font-mono text-slate-600 border-t border-slate-800/80 z-10">
-          GKN V2 Platform Operations &copy; {new Date().getFullYear()}
+          GKN Private Customer Hub &copy; {new Date().getFullYear()}
         </footer>
       </div>
     );

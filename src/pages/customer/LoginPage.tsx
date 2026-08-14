@@ -57,7 +57,6 @@ export const LoginPage: React.FC = () => {
   return (
     <PageContainer
       title="Sign In"
-      description="Sign in to your private GKN V2 account."
     >
       <div className="max-w-md mx-auto">
         <Card title="Sign In" variant="glass">
@@ -86,7 +85,6 @@ export const LoginPage: React.FC = () => {
               </div>
               <Input
                 type="password"
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

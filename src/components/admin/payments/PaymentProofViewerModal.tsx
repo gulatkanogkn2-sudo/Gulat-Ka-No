@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PaymentVerificationRecord } from '../../../types/paymentVerification';
+import { formatPhpAmount } from '../../../utils/currencyUtils';
 
 interface PaymentProofViewerModalProps {
   isOpen: boolean;
@@ -285,7 +286,7 @@ export const PaymentProofViewerModal: React.FC<PaymentProofViewerModalProps> = (
               TX Ref: <strong className="text-amber-300">{payment.transactionReference}</strong>
             </div>
             <div>
-              Amount: <strong className="text-emerald-400">${payment.amountPaid.toFixed(2)}</strong>
+              Amount: <strong className="text-emerald-400">{formatPhpAmount(payment.amountPaid)}</strong>
             </div>
           </div>
         </div>
@@ -293,3 +294,4 @@ export const PaymentProofViewerModal: React.FC<PaymentProofViewerModalProps> = (
     </div>
   );
 };
+

@@ -23,6 +23,7 @@ import {
 import { PaymentVerificationRecord } from '../../../types/paymentVerification';
 import { PaymentStatusBadge } from './PaymentStatusBadge';
 import { PaymentVerificationService } from '../../../services/paymentVerificationService';
+import { formatPhpAmount } from '../../../utils/currencyUtils';
 
 interface PaymentDetailDrawerProps {
   isOpen: boolean;
@@ -101,6 +102,7 @@ export const PaymentDetailDrawer: React.FC<PaymentDetailDrawerProps> = ({
 
               <button
                 onClick={onClose}
+                aria-label="Close payment drawer"
                 className="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800/80 hover:bg-slate-800 transition-colors"
               >
                 <X className="h-5 w-5" />
@@ -185,7 +187,7 @@ export const PaymentDetailDrawer: React.FC<PaymentDetailDrawerProps> = ({
                 <div>
                   <span className="text-slate-500 block text-[10px]">Amount Paid</span>
                   <span className="text-emerald-400 font-bold text-base">
-                    ${payment.amountPaid.toFixed(2)}
+                    {formatPhpAmount(payment.amountPaid)}
                   </span>
                 </div>
                 <div>
@@ -351,7 +353,7 @@ export const PaymentDetailDrawer: React.FC<PaymentDetailDrawerProps> = ({
           {/* Drawer Footer */}
           <div className="bg-slate-900 border-t border-slate-800 p-4 flex items-center justify-between flex-shrink-0 text-xs font-mono text-slate-400">
             <span className="text-[11px] text-slate-500">
-              Payment Verification Module • GKN V2
+              Payment Verification • GKN
             </span>
             <button
               onClick={onClose}
@@ -365,3 +367,4 @@ export const PaymentDetailDrawer: React.FC<PaymentDetailDrawerProps> = ({
     </div>
   );
 };
+

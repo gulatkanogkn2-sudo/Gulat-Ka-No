@@ -211,9 +211,10 @@ export const AdminAlertsModal: React.FC<AdminAlertsModalProps> = ({
 
         {/* Footer */}
         <div className="p-3 bg-[#0A0F1D] border-t border-white/10 text-center font-mono text-[11px] text-slate-400">
-          GKN V2 Operations Alert Center
+          GKN Operations Alert Center
         </div>
       </div>
     </div>
   );
 };
+

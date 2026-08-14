@@ -56,7 +56,7 @@ export const SEOEditor: React.FC<SEOEditorProps> = ({ seo, onChange }) => {
                 type="text"
                 value={seo.metaTitleTemplate}
                 onChange={(e) => onChange({ metaTitleTemplate: e.target.value })}
-                placeholder="%s | GKN V2 Peptides"
+                placeholder="%s | GKN"
                 className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2 text-xs font-mono text-cyan-300"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">
@@ -74,7 +74,7 @@ export const SEOEditor: React.FC<SEOEditorProps> = ({ seo, onChange }) => {
                 rows={3}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-3 text-xs text-slate-200 focus:outline-none"
               />
-              <span className="text-[10px] text-slate-500 block mt-1 font-mono">Example: GKN V2 — Premium peptide research catalog, verified COA documents, and groupbuy procurement in the Philippines.</span>
+              <span className="text-[10px] text-slate-500 block mt-1 font-mono">Example: GKN — Private peptide store, verified COA documents, and GroupBuy ordering.</span>
             </div>
 
             <MediaInput
@@ -165,3 +165,4 @@ export const SEOEditor: React.FC<SEOEditorProps> = ({ seo, onChange }) => {
     </div>
   );
 };
+

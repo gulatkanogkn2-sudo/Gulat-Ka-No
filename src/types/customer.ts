@@ -107,6 +107,7 @@ export interface CustomerDetail {
   registrationDate: string;
   lastLoginDate: string;
   status: CustomerAccountStatus;
+  role?: 'OWNER' | 'ADMIN' | 'STAFF' | 'CUSTOMER' | 'VIEWER';
   tier: CustomerTier;
   isManualTierOverride?: boolean;
   qualifyingLifetimeSpending?: number;
@@ -160,3 +161,4 @@ export interface CustomerExportData {
   mimeType: string;
   content: string;
 }
+

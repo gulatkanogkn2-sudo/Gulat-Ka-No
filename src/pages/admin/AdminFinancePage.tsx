@@ -189,7 +189,7 @@ export const AdminFinancePage: React.FC = () => {
             </span>
             <span className="text-slate-500 text-xs hidden sm:inline">•</span>
             <span className="text-xs font-mono text-slate-400 hidden sm:inline">
-              GKN V2 Operations
+              GKN Operations
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -402,4 +402,5 @@ export const AdminFinancePage: React.FC = () => {
     </div>
   );
 };
+
 
