@@ -560,6 +560,22 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                   </div>
                 </div>
 
+                <div className="pt-2 border-t border-purple-500/20 flex justify-end">
+                  {order.paymentSummary?.paymentReference || order.proofUrl ? (
+                    <a
+                      href={`/admin/payment-verification?orderId=${encodeURIComponent(order.id)}`}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/15 border border-purple-400/40 text-purple-200 hover:bg-purple-500/25 font-mono text-[11px] font-bold"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      {order.paymentSummary?.paymentProofStatus === 'VERIFIED' ? 'VIEW VERIFIED PAYMENT' : 'VERIFY PAYMENT'}
+                    </a>
+                  ) : (
+                    <span className="px-3 py-2 rounded-lg border border-slate-700 text-slate-500 font-mono text-[11px] font-bold">
+                      NO PAYMENT SUBMITTED
+                    </span>
+                  )}
+                </div>
+
                 {order.proofUrl && (
                   <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-xs">
                     <span className="text-slate-400 font-mono">Proof Image Uploaded:</span>
@@ -605,14 +621,14 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                               )}
                             </div>
                             <div className="text-[11px] text-slate-400 font-mono">
-                              {item.variantLabel} {item.casNumber ? `• CAS ${item.casNumber}` : ''} • <span className="text-[#00D9FF] font-bold">{itemVials} Vials</span>
+                              {item.variantLabel} {item.casNumber ? `â€¢ CAS ${item.casNumber}` : ''} â€¢ <span className="text-[#00D9FF] font-bold">{itemVials} Vials</span>
                             </div>
                           </div>
                         </div>
 
                         <div className="text-right font-mono">
                           <div className="text-slate-300 font-medium">
-                            {item.quantity} × ${item.price.toFixed(2)}
+                            {item.quantity} Ã— ${item.price.toFixed(2)}
                           </div>
                           <div className="font-bold text-emerald-400">
                             ${(item.quantity * item.price).toFixed(2)}
@@ -674,3 +690,4 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
     </div>
   );
 };
+
