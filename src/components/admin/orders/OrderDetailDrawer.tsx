@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   X,
   Printer,
@@ -33,6 +34,7 @@ import {
 } from './OrderStatusBadge';
 import { OrderTimeline } from './OrderTimeline';
 import { OrderManagementService } from '../../../services/orderManagementService';
+import { PaymentVerificationService } from '../../../services/paymentVerificationService';
 
 interface OrderDetailDrawerProps {
   order: OrderDetail | null;
@@ -58,6 +60,37 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
   const [courier, setCourier] = useState(order?.courier || '');
   const [activeTab, setActiveTab] = useState<'details' | 'timeline' | 'notes'>('details');
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [linkedPaymentStatus, setLinkedPaymentStatus] = useState<string | null>(null);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!order?.id) {
+      setLinkedPaymentStatus(null);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setIsCheckingPayment(true);
+    PaymentVerificationService.getPayments({ searchQuery: order.id, pageSize: 10 })
+      .then(({ payments }) => {
+        if (!isMounted) return;
+        const exactPayment = payments.find((payment) => payment.orderId === order.id);
+        setLinkedPaymentStatus(exactPayment?.verificationStatus || null);
+      })
+      .catch((error) => {
+        console.error('[OrderDetailDrawer] Exact payment lookup failed:', error);
+        if (isMounted) setLinkedPaymentStatus(null);
+      })
+      .finally(() => {
+        if (isMounted) setIsCheckingPayment(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [order?.id]);
 
   if (!order) return null;
 
@@ -561,14 +594,18 @@ export const OrderDetailDrawer: React.FC<OrderDetailDrawerProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-purple-500/20 flex justify-end">
-                  {order.paymentSummary?.paymentReference || order.proofUrl ? (
-                    <a
-                      href={`/admin/payment-verification?orderId=${encodeURIComponent(order.id)}`}
+                  {isCheckingPayment ? (
+                    <span className="px-3 py-2 rounded-lg border border-slate-700 text-slate-400 font-mono text-[11px] font-bold">
+                      CHECKING PAYMENT...
+                    </span>
+                  ) : linkedPaymentStatus ? (
+                    <Link
+                      to={`/admin/payment-verification?orderId=${encodeURIComponent(order.id)}`}
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/15 border border-purple-400/40 text-purple-200 hover:bg-purple-500/25 font-mono text-[11px] font-bold"
                     >
                       <ShieldCheck className="h-3.5 w-3.5" />
-                      {order.paymentSummary?.paymentProofStatus === 'VERIFIED' ? 'VIEW VERIFIED PAYMENT' : 'VERIFY PAYMENT'}
-                    </a>
+                      {linkedPaymentStatus === 'VERIFIED' ? 'VIEW VERIFIED PAYMENT' : 'VERIFY PAYMENT'}
+                    </Link>
                   ) : (
                     <span className="px-3 py-2 rounded-lg border border-slate-700 text-slate-500 font-mono text-[11px] font-bold">
                       NO PAYMENT SUBMITTED
