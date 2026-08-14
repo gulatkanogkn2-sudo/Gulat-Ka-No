@@ -29,7 +29,7 @@ export const TrackingEmptyState: React.FC<TrackingEmptyStateProps> = ({
           <p className="text-xs text-slate-400 leading-relaxed">
             {searchedRef ? (
               <>
-                No active research allocation record found for reference code{' '}
+                No active order record found for reference code{' '}
                 <span className="font-mono text-[#00D9FF] font-bold">{searchedRef}</span>. Please verify the code or check back after receipt clearance.
               </>
             ) : (
@@ -62,3 +62,4 @@ export const TrackingEmptyState: React.FC<TrackingEmptyStateProps> = ({
     </Card>
   );
 };
+
