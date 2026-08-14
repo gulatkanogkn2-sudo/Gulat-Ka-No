@@ -37,7 +37,7 @@ export const AdministratorsAndRolesTab: React.FC = () => {
               <span className="text-sm font-bold text-white font-mono mt-0.5 block">
                 {user?.fullName || 'Active Administrator'}
               </span>
-              <span className="text-xs text-slate-400 font-mono">{user?.email || 'â€”'}</span>
+              <span className="text-xs text-slate-400 font-mono">{user?.email || '—'}</span>
             </div>
 
             <div>

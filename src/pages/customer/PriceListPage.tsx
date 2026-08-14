@@ -61,7 +61,7 @@ export const PriceListPage: React.FC = () => {
               Transparent batch pricing across GroupBuy allocations, OnHand immediate dispatch items, and MOQ volume reservations. Strictly read-only reference list.
             </p>
           </div>
-          <Badge variant="cyan" className="px-3 py-1 font-mono text-xs font-semibold">CURRENCY: USD ($) & PHP (â‚±)</Badge>
+          <Badge variant="cyan" className="px-3 py-1 font-mono text-xs font-semibold">CURRENCY: USD ($) & PHP (₱)</Badge>
         </div>
       </Card>
 

@@ -104,7 +104,7 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
               className="text-xs font-mono text-slate-400 hover:text-[#00D9FF] transition-colors px-2 py-1 rounded bg-white/5 border border-white/10 md:bg-transparent md:border-0"
               title="Exit Admin to Storefront"
             >
-              Exit â†—
+              Exit ↗
             </Link>
 
             {/* Mobile Menu Toggle Button */}
@@ -221,7 +221,7 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
         ) : (
           <>
             <span>Admin Team (3/5)</span>
-            <span className="text-emerald-400">â— Online</span>
+            <span className="text-emerald-400">● Online</span>
           </>
         )}
       </div>

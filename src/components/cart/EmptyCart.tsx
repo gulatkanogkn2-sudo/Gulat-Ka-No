@@ -56,7 +56,7 @@ export const EmptyCart: React.FC<EmptyCartProps> = ({ onContinueShopping, classN
       {/* Quality Guarantee Footer */}
       <div className="pt-6 border-t border-white/5 flex items-center justify-center gap-2 text-xs font-mono text-slate-400">
         <ShieldCheck className="w-4 h-4 text-[#00D9FF]" />
-        <span>Secure Order Reservation â€¢ Fast Dispatch</span>
+        <span>Secure Order Reservation • Fast Dispatch</span>
       </div>
     </Card>
   );
