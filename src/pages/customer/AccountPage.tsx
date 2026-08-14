@@ -36,8 +36,8 @@ export const AccountPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="Researcher Profile & Orders"
-      description="Manage institutional credentials, shipping destinations, and research batch allocations."
+      title="Customer Profile & Orders"
+      description="Manage your account, shipping destinations, and orders."
     >
       <div className="space-y-8">
         {/* Profile Header Card */}
@@ -61,7 +61,7 @@ export const AccountPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-green-400 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                VERIFIED RESEARCHER
+                VERIFIED CUSTOMER
               </span>
               <Button
                 variant="outline"
@@ -128,3 +128,4 @@ export const AccountPage: React.FC = () => {
     </PageContainer>
   );
 };
+
