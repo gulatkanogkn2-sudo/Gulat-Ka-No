@@ -43,7 +43,7 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
   }, []);
 
   const adminLogoUrl = websiteConfig?.branding?.adminLogo || websiteConfig?.branding?.websiteLogo || BRANDING_ASSETS.logo;
-  const brandName = sysBrandName || websiteConfig?.branding?.brandName || APP_CONFIG.name;
+  const brandName = websiteConfig?.branding?.brandName || sysBrandName || APP_CONFIG.name;
   const brandSlogan = websiteConfig?.branding?.brandSlogan || APP_CONFIG.tagline;
 
   const isMobileOpen = externalIsMobileOpen !== undefined ? externalIsMobileOpen : internalMobileOpen;
@@ -104,7 +104,7 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
               className="text-xs font-mono text-slate-400 hover:text-[#00D9FF] transition-colors px-2 py-1 rounded bg-white/5 border border-white/10 md:bg-transparent md:border-0"
               title="Exit Admin to Storefront"
             >
-              Exit ↗
+              Exit â†—
             </Link>
 
             {/* Mobile Menu Toggle Button */}
@@ -221,11 +221,12 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
         ) : (
           <>
             <span>Admin Team (3/5)</span>
-            <span className="text-emerald-400">● Online</span>
+            <span className="text-emerald-400">â— Online</span>
           </>
         )}
       </div>
     </aside>
   );
 };
+
 
