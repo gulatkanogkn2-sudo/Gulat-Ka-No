@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser({
         id: profile.id,
         email: profile.email || authUser.email || '',
-        fullName: profile.full_name || 'Researcher',
+        fullName: profile.full_name || 'Customer',
         role: profile.role as UserRole,
         createdAt: profile.created_at || authUser.created_at,
       });
@@ -113,3 +113,4 @@ export const useAuthContext = () => {
   }
   return context;
 };
+
