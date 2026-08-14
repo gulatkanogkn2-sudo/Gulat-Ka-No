@@ -74,12 +74,11 @@ export const BrandingEditor: React.FC<BrandingEditorProps> = ({ branding, onChan
               <label className="text-xs font-semibold text-slate-300 block mb-1">Brand Name</label>
               <input
                 type="text"
-                value="GKN V2"
-                readOnly
-                disabled
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-400 cursor-not-allowed"
+                value={branding.brandName}
+                onChange={(e) => onChange({ brandName: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none"
               />
-              <span className="text-[10px] text-slate-500 block mt-1 font-mono">Example: GKN V2 â€¢ Short name used in navigation headers</span>
+              <span className="text-[10px] text-slate-500 block mt-1 font-mono">Short name used in navigation headers.</span>
             </div>
 
             <div>
