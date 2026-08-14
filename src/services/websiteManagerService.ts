@@ -13,6 +13,7 @@ import {
 } from '../types/websiteManager';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
 import { Json } from '../types/supabase';
+import { readJsonCache, writeCompactJsonCache } from '../utils/safeLocalStorage';
 
 const STORAGE_KEY = 'gkn_website_manager_config_v2';
 const SETTING_KEY = 'website_config';
@@ -23,7 +24,7 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     adminLogo: BRANDING_ASSETS.logo,
     mobileLogo: BRANDING_ASSETS.logo,
     favicon: '/favicon.ico',
-    browserTitle: 'GKN V2 — High Purity Laboratory Research Peptides & Analytics',
+    browserTitle: 'GKN V2 â€” High Purity Laboratory Research Peptides & Analytics',
     browserDescription: 'Premier laboratory peptide procurement platform supporting GroupBuy batches, OnHand immediate dispatch, and volume MOQ sourcing.',
     brandName: 'GKN V2',
     brandSlogan: 'Gulat Ka No!!? Scientific Excellence & Verified Purity',
@@ -53,7 +54,7 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     },
   },
   announcement: {
-    message: '🔬 LAB FLASH: BPC-157 & TB-500 Batch #9844 Test Reports Verified at 99.85% Purity. Free Express Shipping on orders over $300.',
+    message: 'ðŸ”¬ LAB FLASH: BPC-157 & TB-500 Batch #9844 Test Reports Verified at 99.85% Purity. Free Express Shipping on orders over $300.',
     backgroundColor: '#0F172A',
     textColor: '#00D9FF',
     startDate: '2026-08-01T00:00:00.000Z',
@@ -152,17 +153,12 @@ export const DEFAULT_WEBSITE_CONFIG: WebsiteConfig = {
     ],
   },
   footer: {
-    footerLogo: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=400&q=80',
-    copyrightText: '© 2026 GKN V2 Laboratory Sourcing Platform. All rights reserved. For research purposes only.',
-    contactEmail: 'support@gkn.research',
-    contactPhone: '+1 (800) 555-4567',
-    address: 'Building 4B, BioTech Science Park, Silicon Corridor, CA 94025',
-    socialLinks: [
-      { platform: 'telegram', label: 'Telegram Community', url: 'https://t.me/gkn_research', isVisible: true },
-      { platform: 'twitter', label: 'Twitter / X', url: 'https://x.com/gkn_research', isVisible: true },
-      { platform: 'discord', label: 'Discord Server', url: 'https://discord.gg/gkn_research', isVisible: true },
-      { platform: 'github', label: 'GitHub Docs', url: 'https://github.com/gkn-research', isVisible: false },
-    ],
+    footerLogo: '',
+    copyrightText: 'Â© 2026 GKN V2 Laboratory Sourcing Platform. All rights reserved. For research purposes only.',
+    contactEmail: '',
+    contactPhone: '',
+    address: '',
+    socialLinks: [],
     linkColumns: [
       {
         id: 'fc-1',
@@ -280,15 +276,8 @@ export class WebsiteManagerService {
    */
   public static async getWebsiteConfig(): Promise<WebsiteConfig> {
     if (!this.currentConfig) {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          this.currentConfig = this.mergeWithDefaults(parsed);
-        }
-      } catch (e) {
-        console.warn('[WebsiteManagerService] Failed to parse saved localStorage config:', e);
-      }
+      const saved = readJsonCache<Partial<WebsiteConfig>>(STORAGE_KEY);
+      if (saved) this.currentConfig = this.mergeWithDefaults(saved);
 
       if (!this.currentConfig) {
         this.currentConfig = { ...DEFAULT_WEBSITE_CONFIG };
@@ -351,11 +340,7 @@ export class WebsiteManagerService {
           if (remoteConfig) {
             this.currentConfig = this.mergeWithDefaults(remoteConfig);
             this.isSupabaseInitialized = true;
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(this.currentConfig));
-            } catch (e) {
-              console.error('[WebsiteManagerService] LocalStorage cache write error:', e);
-            }
+            writeCompactJsonCache(STORAGE_KEY, this.currentConfig);
             notifyListeners({ ...this.currentConfig });
           } else {
             this.isSupabaseInitialized = true;
@@ -397,11 +382,7 @@ export class WebsiteManagerService {
     this.currentConfig = updated;
 
     // Cache locally for instant offline/initial rendering
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.error('[WebsiteManagerService] LocalStorage write error:', e);
-    }
+    writeCompactJsonCache(STORAGE_KEY, updated);
 
     // Persist to Supabase system_settings
     if (isSupabaseConfigured) {
@@ -577,3 +558,4 @@ export class WebsiteManagerService {
     };
   }
 }
+
