@@ -24,7 +24,7 @@ export const EmptyCart: React.FC<EmptyCartProps> = ({ onContinueShopping, classN
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-white tracking-tight">Your Allocation Cart is Empty</h2>
         <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
-          You have no active peptide batch reservations or laboratory standards in your staging cart. Explore our store portals to populate your campaign order.
+          Your cart is empty. Explore the stores to add products to your order.
         </p>
       </div>
 
@@ -56,8 +56,9 @@ export const EmptyCart: React.FC<EmptyCartProps> = ({ onContinueShopping, classN
       {/* Quality Guarantee Footer */}
       <div className="pt-6 border-t border-white/5 flex items-center justify-center gap-2 text-xs font-mono text-slate-400">
         <ShieldCheck className="w-4 h-4 text-[#00D9FF]" />
-        <span>Secure Order Reservation • Fast Dispatch</span>
+        <span>Secure Order Reservation â€¢ Fast Dispatch</span>
       </div>
     </Card>
   );
 };
+
