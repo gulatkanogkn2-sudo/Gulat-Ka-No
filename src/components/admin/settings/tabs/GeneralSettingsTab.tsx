@@ -35,18 +35,18 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
           <SettingInput
             label="Website Title Name"
-            value={settings.websiteName}
-            onChange={(val) => handleChange('websiteName', val)}
-            helperText="Appears on browser tabs, bookmarks, and search engine title tags."
-            exampleText="GKN V2 Platform"
+            value="GKN V2"
+            onChange={() => undefined}
+            disabled
+            helperText="Permanent project identity. Browser metadata can be edited in Website Manager."
             error={errors.websiteName}
           />
           <SettingInput
             label="Brand Trademark Identifier"
-            value={settings.brandName}
-            onChange={(val) => handleChange('brandName', val)}
-            helperText="Short platform acronym used in headers and navigation badges."
-            exampleText="GKN V2"
+            value="GKN V2"
+            onChange={() => undefined}
+            disabled
+            helperText="Permanent GKN V2 identifier used in headers and navigation."
             error={errors.brandName}
           />
           <SettingInput
@@ -102,9 +102,9 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
             value={settings.currency}
             onChange={(val) => handleChange('currency', val)}
             options={[
-              { value: 'PHP', label: 'Philippine Peso (PHP ₱)', description: 'Primary' },
+              { value: 'PHP', label: 'Philippine Peso (PHP â‚±)', description: 'Primary' },
               { value: 'USD', label: 'US Dollar (USD $)', description: 'Secondary' },
-              { value: 'EUR', label: 'Euro (EUR €)', description: 'Euro' },
+              { value: 'EUR', label: 'Euro (EUR â‚¬)', description: 'Euro' },
               { value: 'USDT', label: 'Tether Crypto (USDT)', description: 'Crypto' },
             ]}
             helperText="Primary operating currency for store prices, cart totals, and receipts."
@@ -128,10 +128,10 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
         {/* Currency Conversion Grid */}
         <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
           <SettingInput
-            label="USD → PHP Exchange Rate (1 USD = ₱ PHP)"
+            label="USD â†’ PHP Exchange Rate (1 USD = â‚± PHP)"
             type="number"
             step="0.0001"
-            prefixText="₱"
+            prefixText="â‚±"
             suffixText="PHP / $1 USD"
             value={settings.usdToPhpExchangeRate ?? 57.0833}
             onChange={(val) => {
@@ -282,3 +282,4 @@ export const GeneralSettingsTab: React.FC<GeneralSettingsTabProps> = ({
     </div>
   );
 };
+

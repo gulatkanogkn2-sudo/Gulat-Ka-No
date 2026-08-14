@@ -9,11 +9,11 @@ export interface NavGroup {
 }
 
 export const APP_CONFIG = {
-  name: 'GKN',
+  name: 'GKN V2',
   tagline: 'Gulat Ka No!!?',
   version: '2.0.0-foundation',
-  supportEmail: 'support@gkn.research',
-  whatsappSupport: '+1 (555) 019-2831',
+  supportEmail: '',
+  whatsappSupport: '',
   laboratoryDisclaimer: 'FOR LABORATORY AND ANALYTICAL RESEARCH PURPOSES ONLY. NOT FOR HUMAN OR VETERINARY USE.',
 
   // Customer Navigation Categories
@@ -81,3 +81,4 @@ export const APP_CONFIG = {
     },
   ] as NavGroup[],
 };
+

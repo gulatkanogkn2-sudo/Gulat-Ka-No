@@ -9,6 +9,7 @@ import {
 import { DEFAULT_SYSTEM_SETTINGS } from '../data/defaultSystemSettings';
 import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 import { Json } from '../types/supabase';
+import { writeCompactJsonCache } from '../utils/safeLocalStorage';
 
 const SETTINGS_STORAGE_KEY = 'gkn_system_settings_v2';
 
@@ -31,6 +32,11 @@ class SystemSettingsService {
           const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored) as SystemSettings;
+            if (parsed.general?.companyName === 'GKN Research Group Ltd.') {
+              parsed.general.companyName = 'GKN V2';
+            }
+            parsed.general.websiteName = 'GKN V2';
+            parsed.general.brandName = 'GKN V2';
             // Deep merge with defaults to ensure any newly added setting keys exist
             this.cachedSettings = this.mergeWithDefaults(parsed);
           }
@@ -631,12 +637,7 @@ class SystemSettingsService {
   }
 
   private saveToStorage(settings: SystemSettings): void {
-    if (typeof localStorage === 'undefined') return;
-    try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    } catch (e) {
-      console.error('[SystemSettingsService] Error saving settings to localStorage:', e);
-    }
+    writeCompactJsonCache(SETTINGS_STORAGE_KEY, settings);
   }
 
   private notifyListeners(settings: SystemSettings): void {

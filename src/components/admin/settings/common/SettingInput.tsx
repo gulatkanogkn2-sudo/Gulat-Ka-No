@@ -55,7 +55,6 @@ export const SettingInput: React.FC<SettingInputProps> = ({
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     isFocusedRef.current = false;
-    setLocalValue(value !== undefined && value !== null ? String(value) : '');
     onBlur?.(e);
   };
 
@@ -110,4 +109,5 @@ export const SettingInput: React.FC<SettingInputProps> = ({
     </div>
   );
 };
+
 

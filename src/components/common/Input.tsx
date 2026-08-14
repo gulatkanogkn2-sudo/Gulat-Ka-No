@@ -50,9 +50,6 @@ export const Input: React.FC<InputProps> = ({
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     isFocusedRef.current = false;
-    if (isControlled) {
-      setLocalValue(value !== undefined && value !== null ? value : '');
-    }
     onBlur?.(e);
   };
 
@@ -98,7 +95,7 @@ export const Input: React.FC<InputProps> = ({
 
       {error ? (
         <p className="text-xs text-red-400 mt-1 flex items-center gap-1 font-medium">
-          <span>⚠️</span> {error}
+          <span>âš ï¸</span> {error}
         </p>
       ) : helperText ? (
         <p className="text-xs text-slate-400 mt-1">{helperText}</p>
@@ -106,3 +103,4 @@ export const Input: React.FC<InputProps> = ({
     </div>
   );
 };
+
