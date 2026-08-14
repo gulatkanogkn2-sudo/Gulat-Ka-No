@@ -8,6 +8,7 @@ import {
   SupportedFileType,
 } from '../types/mediaLibrary';
 import { supabaseUrl } from '../lib/supabase';
+import { readJsonCache, writeCompactJsonCache } from '../utils/safeLocalStorage';
 
 const STORAGE_KEY = 'gkn_media_library_v2';
 
@@ -88,7 +89,7 @@ export const INITIAL_MEDIA_ASSETS: MediaAssetItem[] = [
     tags: ['hero', 'lab', 'synthesizer', 'blue', 'homepage'],
     description: 'Primary homepage hero background showcasing automated peptide synthesis robotics.',
     altText: 'Automated peptide synthesis cleanroom equipment with neon cyan illumination',
-    seoTitle: 'GKN Homepage Hero Banner — Automated Cleanroom',
+    seoTitle: 'GKN Homepage Hero Banner â€” Automated Cleanroom',
     seoDescription: 'High purity peptide synthesis laboratory background asset.',
     usageCount: 2,
     usageReferences: [
@@ -262,7 +263,7 @@ export const INITIAL_MEDIA_ASSETS: MediaAssetItem[] = [
   {
     id: 'med-coa-01',
     name: 'coa-batch-9844-semaglutide-hplc.pdf',
-    title: 'HPLC & MS COA Report — Batch #9844 (Semaglutide 10mg)',
+    title: 'HPLC & MS COA Report â€” Batch #9844 (Semaglutide 10mg)',
     category: 'COA',
     fileType: 'PDF',
     mimeType: 'application/pdf',
@@ -290,7 +291,7 @@ export const INITIAL_MEDIA_ASSETS: MediaAssetItem[] = [
   {
     id: 'med-coa-02',
     name: 'coa-batch-7712-bpc157-mass-spec.pdf',
-    title: 'Mass Spectrometry COA Report — Batch #7712 (BPC-157 10mg)',
+    title: 'Mass Spectrometry COA Report â€” Batch #7712 (BPC-157 10mg)',
     category: 'COA',
     fileType: 'PDF',
     mimeType: 'application/pdf',
@@ -510,26 +511,18 @@ class MediaLibraryService {
   }
 
   private loadFromStorage() {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        this.assets = JSON.parse(stored);
-      } else {
-        this.assets = [...INITIAL_MEDIA_ASSETS];
-        this.saveToStorage();
-      }
-    } catch (e) {
-      console.error('Error reading Media Library from localStorage:', e);
-      this.assets = [...INITIAL_MEDIA_ASSETS];
+    const stored = readJsonCache<MediaAssetItem[]>(STORAGE_KEY);
+    if (Array.isArray(stored)) {
+      // Remove the legacy bundled demo catalog; retain only user-created assets.
+      this.assets = stored.filter((asset) => !/^med-(logo|hero|store|prod|coa|proto|calc|qr|doc|icon)-/i.test(asset.id));
+    } else {
+      this.assets = [];
+      this.saveToStorage();
     }
   }
 
   private saveToStorage() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.assets));
-    } catch (e) {
-      console.error('Error saving Media Library to localStorage:', e);
-    }
+    writeCompactJsonCache(STORAGE_KEY, this.assets);
   }
 
   public getAssets(filters?: MediaFilterOptions): MediaAssetItem[] {
@@ -955,3 +948,4 @@ class MediaLibraryService {
 }
 
 export const mediaLibraryService = new MediaLibraryService();
+
