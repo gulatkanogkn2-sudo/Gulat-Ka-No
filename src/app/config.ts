@@ -65,10 +65,12 @@ export const APP_CONFIG = {
       items: [
         { label: 'General', path: '/admin/settings?tab=general' },
         { label: 'Stores & Products', path: '/admin/settings?tab=stores' },
+        { label: 'Customer Tiers', path: '/admin/settings?tab=customerTiers' },
         { label: 'Checkout & Fees', path: '/admin/settings?tab=checkout' },
         { label: 'Orders & Timelines', path: '/admin/settings?tab=orders' },
         { label: 'Shipping', path: '/admin/settings?tab=shipping' },
         { label: 'Payments', path: '/admin/settings?tab=payments' },
+        { label: 'Digital Member ID', path: '/admin/settings?tab=digitalMemberId' },
       ],
     },
     {

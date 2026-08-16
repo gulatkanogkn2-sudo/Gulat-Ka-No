@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Search, Filter, RotateCcw, SortAsc } from 'lucide-react';
 import {
   CustomerAccountStatus,
@@ -6,6 +6,7 @@ import {
   CustomerTier,
   CustomerVerificationStatus,
 } from '../../../types/customer';
+import { CustomerTierService } from '../../../services/customerTierService';
 
 interface CustomerFiltersProps {
   filters: CustomerFilterOptions;
@@ -20,6 +21,11 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
   onReset,
   totalResults,
 }) => {
+  const availableTiers = useMemo(() => {
+    const settings = CustomerTierService.getTierSettings();
+    return settings.tiers.filter((t) => t.isActive);
+  }, []);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({
       ...filters,
@@ -108,12 +114,11 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500"
           >
             <option value="all">Tier: All Tiers</option>
-            <option value="STANDARD">Standard</option>
-            <option value="SILVER">Silver</option>
-            <option value="GOLD">Gold</option>
-            <option value="VIP">VIP</option>
-            <option value="ADMINISTRATOR">Administrator</option>
-            <option value="OWNER">Owner</option>
+            {availableTiers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.id})
+              </option>
+            ))}
           </select>
         </div>
 
@@ -163,31 +168,31 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
           <select
             value={filters.verificationFilter || 'all'}
             onChange={handleVerificationChange}
-            className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500"
           >
-            <option value="all">All Verification Statuses</option>
+            <option value="all">All Verification States</option>
             <option value="VERIFIED">Verified Only</option>
-            <option value="PENDING_ID">Pending ID</option>
-            <option value="UNVERIFIED">Unverified</option>
-            <option value="REJECTED">Rejected / Flagged</option>
+            <option value="PENDING_ID">Pending ID Only</option>
+            <option value="UNVERIFIED">Unverified Only</option>
+            <option value="REJECTED">Rejected Only</option>
           </select>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="text-slate-400">
+            Total Results:{' '}
+            <strong className="text-cyan-400 font-bold">{totalResults}</strong>
+          </span>
 
           <button
             onClick={onReset}
-            className="flex items-center gap-1 px-2.5 py-1 bg-slate-800/70 hover:bg-slate-800 text-slate-300 rounded text-xs transition-colors"
-            title="Reset All Filters"
+            className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors"
           >
-            <RotateCcw className="h-3 w-3" />
-            <span>Reset</span>
+            <RotateCcw className="h-3 w-3 text-slate-400" />
+            <span>Reset Filters</span>
           </button>
-        </div>
-
-        <div className="text-slate-400 text-xs">
-          Showing <strong className="text-cyan-400">{totalResults}</strong> customer account
-          {totalResults === 1 ? '' : 's'}
         </div>
       </div>
     </div>
   );
 };
-

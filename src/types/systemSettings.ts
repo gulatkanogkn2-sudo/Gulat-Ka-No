@@ -1,4 +1,5 @@
 import { CustomerTierSettings } from './customerTier';
+import { DigitalMemberIdSettings } from './digitalMember';
 
 export interface GeneralSettings {
   websiteName: string;
@@ -348,6 +349,7 @@ export interface SystemSettings {
   adminVisibility: AdminVisibilitySettings;
   owner: OwnerSettings;
   customerTiers?: CustomerTierSettings;
+  digitalMemberId?: DigitalMemberIdSettings;
   updatedAt: string;
   updatedBy: string;
 }

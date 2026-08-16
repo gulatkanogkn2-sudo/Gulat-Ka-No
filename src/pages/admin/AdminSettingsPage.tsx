@@ -10,8 +10,10 @@ import { CheckoutAndFeesTab } from '../../components/admin/settings/tabs/Checkou
 import { OrdersAndTimelinesTab } from '../../components/admin/settings/tabs/OrdersAndTimelinesTab';
 import { ShippingSettingsTab } from '../../components/admin/settings/tabs/ShippingSettingsTab';
 import { PaymentSettingsTab } from '../../components/admin/settings/tabs/PaymentSettingsTab';
+import { CustomerTiersSettingsTab } from '../../components/admin/settings/tabs/CustomerTiersSettingsTab';
 import { AdminAndOwnerTab } from '../../components/admin/settings/tabs/AdminAndOwnerTab';
 import { DeploymentAndAdvancedTab } from '../../components/admin/settings/tabs/DeploymentAndAdvancedTab';
+import { DigitalMemberIdSettingsTab } from '../../components/admin/settings/tabs/DigitalMemberIdSettingsTab';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 
 // Icons
@@ -29,10 +31,12 @@ import {
 export type MainTabKey =
   | 'general'
   | 'stores'
+  | 'customerTiers'
   | 'checkout'
   | 'orders'
   | 'shipping'
   | 'payments'
+  | 'digitalMemberId'
   | 'adminOwner'
   | 'deployment';
 
@@ -46,8 +50,10 @@ function resolveTabParam(rawParam: string | null): { mainTab: MainTabKey; subPar
 
     case 'stores':
     case 'productAddons':
-    case 'customerTiers':
       return { mainTab: 'stores', subParam: rawParam };
+
+    case 'customerTiers':
+      return { mainTab: 'customerTiers' };
 
     case 'checkout':
     case 'accessories':
@@ -62,6 +68,9 @@ function resolveTabParam(rawParam: string | null): { mainTab: MainTabKey; subPar
 
     case 'payments':
       return { mainTab: 'payments' };
+
+    case 'digitalMemberId':
+      return { mainTab: 'digitalMemberId' };
 
     case 'adminOwner':
     case 'adminVisibility':
@@ -374,6 +383,17 @@ export const AdminSettingsPage: React.FC = () => {
           <PaymentSettingsTab
             settings={settings.payments}
             onChange={(updated) => handleUpdate({ ...settings, payments: updated })}
+          />
+        )}
+
+        {activeTab === 'customerTiers' && (
+          <CustomerTiersSettingsTab />
+        )}
+
+        {activeTab === 'digitalMemberId' && (
+          <DigitalMemberIdSettingsTab
+            settings={settings.digitalMemberId}
+            onChange={(updated) => handleUpdate({ ...settings, digitalMemberId: updated })}
           />
         )}
 

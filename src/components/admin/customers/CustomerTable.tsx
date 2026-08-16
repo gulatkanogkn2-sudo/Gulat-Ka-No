@@ -188,16 +188,10 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                     <td className="py-3 px-3 align-middle whitespace-nowrap">
                       <div className="flex flex-col items-start gap-1">
                         <CustomerTierBadge tier={c.tier} size="sm" />
-                        {c.isManualTierOverride && c.tier !== 'OWNER' && (
+                        {c.isManualTierOverride && (
                           <span className="text-[9px] font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/40 flex items-center gap-0.5">
                             <ShieldAlert size={9} />
                             <span>MANUAL OVERRIDE</span>
-                          </span>
-                        )}
-                        {c.tier === 'OWNER' && (
-                          <span className="text-[9px] font-mono font-bold text-pink-300 bg-pink-950/80 px-1.5 py-0.5 rounded border border-pink-500/40 flex items-center gap-0.5">
-                            <Lock size={9} />
-                            <span>MANUAL ONLY</span>
                           </span>
                         )}
                       </div>

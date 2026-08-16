@@ -6,12 +6,13 @@ import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useSupabase } from '../../hooks/useSupabase';
 import { useAuth } from '../../hooks/useAuth';
+import { AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { supabase } = useSupabase();
-  const { isAuthenticated, isStaff } = useAuth();
+  const { isAuthenticated, isStaff, accountError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +37,23 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: trimmedEmail,
         password,
       });
 
@@ -49,7 +61,26 @@ export const LoginPage: React.FC = () => {
       
       // Effect hook will handle redirect on successful login
     } catch (err: any) {
-      setError(err.message || 'Failed to authenticate. Please check your credentials.');
+      const rawMsg = err?.message || '';
+      const errorCode = err?.code || err?.error_code || '';
+      
+      const isEmailNotConfirmed = 
+        rawMsg.toLowerCase().includes('email not confirmed') ||
+        rawMsg.toLowerCase().includes('email_not_confirmed') ||
+        errorCode === 'email_not_confirmed';
+
+      const isInvalidCredentials =
+        rawMsg.toLowerCase().includes('invalid login credentials') ||
+        rawMsg.toLowerCase().includes('invalid credentials') ||
+        errorCode === 'invalid_credentials';
+
+      if (isEmailNotConfirmed) {
+        setError('Please verify your email before signing in. Check your inbox for the verification link.');
+      } else if (isInvalidCredentials) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else {
+        setError(rawMsg || 'Failed to authenticate. Please check your credentials.');
+      }
       setLoading(false);
     }
   };
@@ -60,9 +91,10 @@ export const LoginPage: React.FC = () => {
     >
       <div className="max-w-md mx-auto">
         <Card title="Sign In" variant="glass">
-          {error && (
-            <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium">
-              {error}
+          {(error || accountError) && (
+            <div className="mb-6 p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error || accountError}</span>
             </div>
           )}
 
@@ -85,6 +117,7 @@ export const LoginPage: React.FC = () => {
               </div>
               <Input
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -107,4 +140,3 @@ export const LoginPage: React.FC = () => {
     </PageContainer>
   );
 };
-

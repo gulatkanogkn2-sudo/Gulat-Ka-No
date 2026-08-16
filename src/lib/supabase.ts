@@ -44,6 +44,12 @@ export const getSupabaseClient = (): SupabaseClient<Database> | null => {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+      global: {
+        headers: {
+          'x-application-name': 'gkn-v2',
+        },
       },
     });
   }

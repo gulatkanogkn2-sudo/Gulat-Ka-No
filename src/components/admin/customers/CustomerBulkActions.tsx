@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Users,
   X,
@@ -9,6 +9,7 @@ import {
   Check,
 } from 'lucide-react';
 import { CustomerAccountStatus, CustomerTier } from '../../../types/customer';
+import { CustomerTierService } from '../../../services/customerTierService';
 
 interface CustomerBulkActionsProps {
   selectedCount: number;
@@ -28,6 +29,11 @@ export const CustomerBulkActions: React.FC<CustomerBulkActionsProps> = ({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [tierDropdownOpen, setTierDropdownOpen] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+
+  const availableTiers = useMemo(() => {
+    const settings = CustomerTierService.getTierSettings();
+    return settings.tiers.filter((t) => t.isActive);
+  }, []);
 
   if (selectedCount === 0) return null;
 
@@ -131,43 +137,20 @@ export const CustomerBulkActions: React.FC<CustomerBulkActionsProps> = ({
         </button>
 
         {tierDropdownOpen && (
-          <div className="absolute bottom-full mb-2 left-0 w-44 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl py-1 z-50">
-            <button
-              onClick={() => {
-                onBulkTierUpdate('STANDARD');
-                setTierDropdownOpen(false);
-              }}
-              className="w-full text-left px-3 py-1.5 hover:bg-slate-800 text-slate-300 text-xs"
-            >
-              Standard Tier
-            </button>
-            <button
-              onClick={() => {
-                onBulkTierUpdate('SILVER');
-                setTierDropdownOpen(false);
-              }}
-              className="w-full text-left px-3 py-1.5 hover:bg-slate-800 text-cyan-300 text-xs"
-            >
-              Silver Tier
-            </button>
-            <button
-              onClick={() => {
-                onBulkTierUpdate('GOLD');
-                setTierDropdownOpen(false);
-              }}
-              className="w-full text-left px-3 py-1.5 hover:bg-slate-800 text-yellow-400 text-xs"
-            >
-              Gold Tier
-            </button>
-            <button
-              onClick={() => {
-                onBulkTierUpdate('VIP');
-                setTierDropdownOpen(false);
-              }}
-              className="w-full text-left px-3 py-1.5 hover:bg-slate-800 text-amber-300 text-xs font-bold"
-            >
-              VIP Tier
-            </button>
+          <div className="absolute bottom-full mb-2 left-0 w-48 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl py-1 z-50 max-h-60 overflow-y-auto">
+            {availableTiers.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  onBulkTierUpdate(t.id);
+                  setTierDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 hover:bg-slate-800 text-slate-200 text-xs flex items-center justify-between"
+              >
+                <span>{t.name}</span>
+                <span className="text-[10px] text-slate-500 font-mono">({t.id})</span>
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -214,7 +197,7 @@ export const CustomerBulkActions: React.FC<CustomerBulkActionsProps> = ({
               }}
               className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 text-xs"
             >
-              Export for Google Sheets
+              Google Sheets Ready
             </button>
           </div>
         )}

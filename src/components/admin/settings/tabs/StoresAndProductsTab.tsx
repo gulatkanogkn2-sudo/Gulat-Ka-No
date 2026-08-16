@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { StoreSettings, OrderSettings } from '../../../../types/systemSettings';
 import { StoreSettingsTab } from './StoreSettingsTab';
 import { ProductAddonsSettingsTab } from './ProductAddonsSettingsTab';
-import { ShoppingBag, Link2 } from 'lucide-react';
+import { CustomerTiersSettingsTab } from './CustomerTiersSettingsTab';
+import { ShoppingBag, Link2, Award } from 'lucide-react';
 
 interface StoresAndProductsTabProps {
   settings: StoreSettings;
@@ -19,7 +20,8 @@ export const StoresAndProductsTab: React.FC<StoresAndProductsTabProps> = ({
   onChangeOrders,
   subTabParam,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'instances' | 'addons'>(() => {
+  const [activeSubTab, setActiveSubTab] = useState<'instances' | 'addons' | 'customerTiers'>(() => {
+    if (subTabParam === 'customerTiers') return 'customerTiers';
     if (subTabParam === 'productAddons') return 'addons';
     return 'instances';
   });
@@ -53,6 +55,19 @@ export const StoresAndProductsTab: React.FC<StoresAndProductsTabProps> = ({
           <Link2 size={14} />
           <span>Product Add-ons & Supply Relationships</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('customerTiers')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer whitespace-nowrap ${
+            activeSubTab === 'customerTiers'
+              ? 'bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/40 shadow-[0_0_10px_rgba(0,217,255,0.2)]'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          <Award size={14} />
+          <span>Customer Tiers & Loyalty Rules</span>
+        </button>
       </div>
 
       {/* Render Active View */}
@@ -67,6 +82,10 @@ export const StoresAndProductsTab: React.FC<StoresAndProductsTabProps> = ({
 
       {activeSubTab === 'addons' && (
         <ProductAddonsSettingsTab />
+      )}
+
+      {activeSubTab === 'customerTiers' && (
+        <CustomerTiersSettingsTab />
       )}
     </div>
   );
