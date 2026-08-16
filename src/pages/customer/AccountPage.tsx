@@ -7,6 +7,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSupabase } from '../../hooks/useSupabase';
 import { OrderService } from '../../services/orderService';
 import { CustomerAvatarService } from '../../services/customerAvatarService';
+import { systemSettingsService } from '../../services/systemSettingsService';
+import { DigitalMemberCard } from '../../components/digitalMember/DigitalMemberCard';
 import { OrderDetail } from '../../types/order';
 import { TrackingResult } from '../../components/tracking/TrackingResult';
 import {
@@ -30,6 +32,7 @@ import {
   Camera,
   Trash2,
   Loader2,
+  CreditCard,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -37,6 +40,22 @@ export const AccountPage: React.FC = () => {
   const { user, logout, refreshProfile } = useAuth();
   const { supabase, isConfigured } = useSupabase();
   const [recentOrders, setRecentOrders] = useState<OrderDetail[]>([]);
+
+  // Digital Member ID Settings & Tier Config
+  const [digitalIdSettings, setDigitalIdSettings] = useState(() => systemSettingsService.getSettings().digitalMemberId);
+  const [tierConfig, setTierConfig] = useState(() => {
+    const tiers = systemSettingsService.getSettings().customerTiers?.tiers || [];
+    return tiers.find((t) => t.id === user?.tier) || null;
+  });
+
+  useEffect(() => {
+    const unsubscribe = systemSettingsService.subscribe((settings) => {
+      setDigitalIdSettings(settings.digitalMemberId);
+      const tiers = settings.customerTiers?.tiers || [];
+      setTierConfig(tiers.find((t) => t.id === user?.tier) || null);
+    });
+    return () => unsubscribe();
+  }, [user?.tier]);
   
   // Avatar Display & Upload State
   const [avatarDisplayUrl, setAvatarDisplayUrl] = useState<string | null>(null);
@@ -553,6 +572,69 @@ export const AccountPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </Card>
+
+        {/* Digital Member ID Card Section */}
+        <Card variant="glass" className="p-6 border-[#00D9FF]/30 font-mono space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#00D9FF]/10 border border-[#00D9FF]/30 flex items-center justify-center text-[#00D9FF]">
+                <CreditCard className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Digital Member ID Card
+                </h3>
+                <p className="text-[11px] text-slate-400 font-sans">
+                  Your GKN digital member credential.
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[10px] font-bold text-[#00D9FF] bg-[#00D9FF]/10 px-2.5 py-1 rounded-full border border-[#00D9FF]/20">
+              LIVE CREDENTIAL
+            </span>
+          </div>
+
+          {digitalIdSettings && !digitalIdSettings.enabled ? (
+            <div className="p-4 rounded-xl bg-slate-900/80 border border-white/10 text-center text-xs text-slate-400 font-sans">
+              Digital Member ID is currently unavailable.
+            </div>
+          ) : (
+            <div className="py-2 flex justify-center">
+              <DigitalMemberCard
+                profile={{
+                  id: user?.id || 'customer-0',
+                  fullName: user?.fullName || 'Registered Customer',
+                  preferredName: user?.preferredName,
+                  email: user?.email || '',
+                  customerCode: user?.customerCode || 'GKN-000000',
+                  tier: user?.tier || 'STANDARD',
+                  verificationStatus: user?.verificationStatus || 'VERIFIED',
+                  createdAt: user?.createdAt,
+                }}
+                settings={
+                  digitalIdSettings || {
+                    enabled: true,
+                    frontBackgroundDim: 25,
+                    backBackgroundDim: 40,
+                    primaryColor: '#00D9FF',
+                    secondaryColor: '#8B5CF6',
+                    accentColor: '#FF2ED1',
+                    showQrCode: true,
+                    showBarcode: true,
+                    issuerName: 'GKN',
+                    backNotice:
+                      'This digital member card identifies the registered GKN account holder. Present when account identification is requested.',
+                  }
+                }
+                avatarDisplayUrl={avatarDisplayUrl}
+                tierConfig={tierConfig}
+                showFlipControls={true}
+                showExportControls={true}
+              />
+            </div>
+          )}
         </Card>
 
         {/* Order History Section */}

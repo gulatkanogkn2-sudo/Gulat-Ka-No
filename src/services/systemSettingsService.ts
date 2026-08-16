@@ -375,6 +375,7 @@ class SystemSettingsService {
       'adminVisibility',
       'owner',
       'customerTiers',
+      'digitalMemberId',
     ];
 
     try {
@@ -456,6 +457,9 @@ class SystemSettingsService {
       customerTiers: updates.customerTiers
         ? updates.customerTiers
         : current.customerTiers || DEFAULT_SYSTEM_SETTINGS.customerTiers,
+      digitalMemberId: updates.digitalMemberId
+        ? { ...(current.digitalMemberId || DEFAULT_SYSTEM_SETTINGS.digitalMemberId!), ...updates.digitalMemberId }
+        : current.digitalMemberId || DEFAULT_SYSTEM_SETTINGS.digitalMemberId,
       updatedAt: new Date().toISOString(),
       updatedBy: 'Admin User',
     };
