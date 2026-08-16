@@ -25,8 +25,19 @@ export const DEV_OWNER_USER: UserProfile = {
   id: 'dev-owner-in-memory-id',
   email: 'development@gkn.local',
   fullName: 'Development Owner',
+  preferredName: 'Dev Lead',
+  phone: '09170000000',
+  birthDate: '1990-01-01',
+  primaryAddress: '123 GKN Cyber Hub, Cyberpunk Blvd',
+  cityProvince: 'Metro Manila',
   role: 'OWNER',
-  createdAt: new Date().toISOString(),
+  status: 'ACTIVE',
+  tier: 'VIP',
+  customerCode: 'GKN-000001',
+  verificationStatus: 'VERIFIED',
+  qualifyingLifetimeSpendingPhp: 50000,
+  rewardPoints: 1250,
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 
 // Permission descriptor for Phase 4.5 development context

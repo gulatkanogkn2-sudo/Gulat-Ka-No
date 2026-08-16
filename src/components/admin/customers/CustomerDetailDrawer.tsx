@@ -375,9 +375,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                     <div className="p-2.5 rounded-lg bg-purple-950/40 border border-purple-500/30 text-purple-300 text-xs font-mono flex items-center gap-2">
                       <ShieldCheck size={16} className="text-purple-400 shrink-0" />
                       <span>
-                        {customer.tier === 'OWNER'
-                          ? 'Platform Owner tier is assigned manually and is excluded from spending thresholds.'
-                          : 'Manual tier override is enabled for this customer. Automatic recalculations will not overwrite this tier.'}
+                        Manual tier override is enabled for this customer. Automatic recalculations will not overwrite this tier.
                       </span>
                     </div>
                   )}

@@ -5,13 +5,12 @@ export type CustomerAccountStatus =
   | 'DISABLED'
   | 'BANNED';
 
-export type CustomerTier =
-  | 'STANDARD'
-  | 'SILVER'
-  | 'GOLD'
-  | 'VIP'
-  | 'ADMINISTRATOR'
-  | 'OWNER';
+/**
+ * CustomerTier is a dynamic string representation that allows
+ * built-in tiers (STANDARD, SILVER, GOLD, VIP) and arbitrary future custom tiers
+ * (PLATINUM, DIAMOND, ELITE_MEMBER, etc.) without modifying TypeScript unions.
+ */
+export type CustomerTier = string;
 
 export type CustomerVerificationStatus =
   | 'VERIFIED'
@@ -161,4 +160,3 @@ export interface CustomerExportData {
   mimeType: string;
   content: string;
 }
-

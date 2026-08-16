@@ -4,8 +4,21 @@ export interface UserProfile {
   id: string;
   email: string;
   fullName?: string;
+  preferredName?: string;
+  phone?: string;
+  birthDate?: string;
+  primaryAddress?: string;
+  cityProvince?: string;
+  avatarUrl?: string;
   role: UserRole;
+  status?: string;
+  tier?: string;
+  customerCode?: string;
+  verificationStatus?: string;
+  qualifyingLifetimeSpendingPhp?: number;
+  rewardPoints?: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface NavItem {
@@ -26,9 +39,3 @@ export * from './paymentVerification';
 export * from './shipping';
 export * from './websiteManager';
 export * from './finance';
-
-export interface ApiResponse<T> {
-  data: T | null;
-  error: string | null;
-  loading: boolean;
-}
